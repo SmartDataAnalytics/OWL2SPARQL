@@ -24,6 +24,7 @@ import org.semanticweb.owlapi.util.DefaultPrefixManager;
 
 import uk.ac.manchester.cs.owlapi.dlsyntax.DLSyntaxObjectRenderer;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryFactory;
@@ -223,11 +224,13 @@ public class OWLAxiomToSPARQLConverterTest {
 	public void testObjectPropertyRangeAxiom() {
 		OWLAxiom axiom = df.getOWLObjectPropertyRangeAxiom(propR, clsA);
 		
-		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" + 
-				"			WHERE\n" + 
-				"			  { ?s <http://foo.bar/r> ?s0 .\n" + 
-				"			    ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/A>\n" + 
-				"			  }");
+		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?o\n" + 
+				"	WHERE\n" + 
+				"	  { ?s ?p ?o\n" + 
+				"	    FILTER NOT EXISTS {?s <http://foo.bar/r> ?s0\n" + 
+				"	      FILTER NOT EXISTS {?s0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/A> }\n" + 
+				"	    }\n" + 
+				"	  }");
 		Query query = converter.asQuery(axiom);
 		
 		assertTrue("Conversion of axiom " + axiom + " failed.\n" + query + " does not match " + targetQuery, query.equals(targetQuery));
@@ -328,6 +331,37 @@ public class OWLAxiomToSPARQLConverterTest {
 				"	    FILTER NOT EXISTS {?s1 <http://foo.bar/r> ?s\n" + 
 				"	      FILTER ( ! sameTerm(?s0, ?s1) )\n" + 
 				"	    }\n" + 
+				"	  }");
+		Query query = converter.asQuery(axiom);
+		
+		assertTrue("Conversion of axiom " + axiom + " failed.\n" + query + " does not match " + targetQuery, query.equals(targetQuery));
+	}
+	
+	@Test
+	public void testTransitiveObjectPropertyAxiom() {
+		OWLAxiom axiom = df.getOWLTransitiveObjectPropertyAxiom(propR);
+		
+		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" + 
+				"	WHERE\n" + 
+				"	  { ?s <http://foo.bar/r> ?o1 .\n" + 
+				"	    ?o1 <http://foo.bar/r> ?o .\n" + 
+				"	    ?s <http://foo.bar/r> ?o\n" + 
+				"	  }");
+		Query query = converter.asQuery(axiom);
+		
+		assertTrue("Conversion of axiom " + axiom + " failed.\n" + query + " does not match " + targetQuery, query.equals(targetQuery));
+	}
+	
+	@Test
+	public void testSubPropertyChainAxiom() {
+		OWLAxiom axiom = df.getOWLSubPropertyChainOfAxiom(Lists.newArrayList(propR, propS, propT), propT);
+		
+		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s \n" + 
+				"	WHERE\n" + 
+				"	  { ?s <http://foo.bar/r> ?s0 .\n" + 
+				"	    ?s0 <http://foo.bar/s> ?s1 .\n" + 
+				"	    ?s1 <http://foo.bar/t> ?o .\n" + 
+				"	    ?s <http://foo.bar/t> ?o\n" + 
 				"	  }");
 		Query query = converter.asQuery(axiom);
 		

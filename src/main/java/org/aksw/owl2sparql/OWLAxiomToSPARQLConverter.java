@@ -386,7 +386,10 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 	
 	@Override
 	public void visit(OWLTransitiveObjectPropertyAxiom axiom) {
-		
+		ParameterizedSparqlString template = new ParameterizedSparqlString(
+				subjectVar + " ?p ?o1 . ?o1 ?p ?o . " + subjectVar + " ?p " + objectVar);
+		template.setIri("p", axiom.getProperty().asOWLObjectProperty().toStringID());
+		sparql += template.toString();
 	}
 
 	@Override
@@ -396,6 +399,24 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 
 	@Override
 	public void visit(OWLSubPropertyChainOfAxiom axiom) {
+		VariablesMapping varGenerator = new VariablesMapping();
+		List<OWLObjectPropertyExpression> propertyChain = axiom.getPropertyChain();
+		String subjectVar = this.subjectVar;
+		for (int i = 0; i < propertyChain.size() - 1; i++) {
+			OWLObjectPropertyExpression propertyExpression = propertyChain.get(i);
+			
+			// new object var will be created
+			String objectVar = varGenerator.newIndividualVariable();
+			
+			sparql += subjectVar + render(propertyExpression) + objectVar + " .";
+			
+			// subject var becomes old object var
+			subjectVar = objectVar;
+		}
+		sparql += subjectVar + render(propertyChain.get(propertyChain.size()-1)) + this.objectVar + " .";
+		
+		OWLObjectPropertyExpression superProperty = axiom.getSuperProperty();
+		sparql += this.subjectVar + render(superProperty) + objectVar; 
 	}
 
 	@Override
@@ -408,6 +429,14 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 	
 	@Override
 	public void visit(OWLHasKeyAxiom axiom) {
+	}
+	
+	private String render(OWLObjectPropertyExpression propertyExpression){
+		if(propertyExpression.isAnonymous()){
+			return "^" + render(propertyExpression.getInverseProperty());
+		} else {
+			return "<" + propertyExpression.asOWLObjectProperty().toStringID() + ">";
+		}
 	}
 	
 	///////////////////////////////////////////////////////////////////////////

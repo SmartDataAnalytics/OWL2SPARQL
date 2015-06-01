@@ -1,8 +1,10 @@
 package org.aksw.owl2sparql;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -11,6 +13,9 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.TreeSet;
 
+import org.aksw.owl2sparql.util.OWLClassExpressionMinimizer;
+import org.aksw.owl2sparql.util.VariablesMapping;
+import org.apache.jena.atlas.logging.Log;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.io.ToStringRenderer;
 import org.semanticweb.owlapi.model.ClassExpressionType;
@@ -57,6 +62,8 @@ import org.semanticweb.owlapi.model.OWLPropertyExpression;
 import org.semanticweb.owlapi.model.OWLPropertyExpressionVisitor;
 import org.semanticweb.owlapi.model.PrefixManager;
 import org.semanticweb.owlapi.util.DefaultPrefixManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import uk.ac.manchester.cs.owl.owlapi.OWLDataFactoryImpl;
 import uk.ac.manchester.cs.owlapi.dlsyntax.DLSyntaxObjectRenderer;
@@ -64,19 +71,15 @@ import uk.ac.manchester.cs.owlapi.dlsyntax.DLSyntaxObjectRenderer;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import com.hp.hpl.jena.graph.NodeFactory;
-import com.hp.hpl.jena.graph.Triple;
-import com.hp.hpl.jena.query.ParameterizedSparqlString;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.query.Syntax;
-import com.hp.hpl.jena.shared.PrefixMapping;
-import com.hp.hpl.jena.sparql.core.BasicPattern;
-import com.hp.hpl.jena.sparql.core.Var;
-import com.hp.hpl.jena.sparql.serializer.FormatterElement;
-import com.hp.hpl.jena.sparql.syntax.ElementTriplesBlock;
+import com.hp.hpl.jena.sparql.algebra.Algebra;
+import com.hp.hpl.jena.sparql.algebra.Op;
 
 public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVisitor, OWLPropertyExpressionVisitor, OWLDataRangeVisitor{
+	
+	private static final Logger logger = LoggerFactory.getLogger(OWLClassExpressionToSPARQLConverter.class);
 	
 	public enum OWLThingRendering{
 		EXPLICIT, GENERIC_TRIPLE;
@@ -96,6 +99,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	private boolean useReasoning = false;
 	
 	private String sparql = "";
+	private String appendix = "";
 	private Stack<String> variables = new Stack<String>();
 	
 	private OWLDataFactory df = new OWLDataFactoryImpl();
@@ -110,6 +114,10 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	private OWLClassExpression expr;
 
 	private boolean needOuterTriplePattern = true;
+	
+	private Deque<Integer> naryExpressions = new ArrayDeque<Integer>();
+	
+	private OWLClassExpressionMinimizer minimizer = new OWLClassExpressionMinimizer(df);
 	
 	public OWLClassExpressionToSPARQLConverter(VariablesMapping mapping) {
 		this.mapping = mapping;
@@ -145,11 +153,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	 * @return
 	 */
 	public String asGroupGraphPattern(String rootVariable, OWLClassExpression expr){
-		this.expr = expr;
-		reset();
-		variables.push(rootVariable);
-		expr.accept(this);
-		return sparql;
+		return asGroupGraphPattern(rootVariable, expr, false);
 	}
 	
 	/**
@@ -160,11 +164,21 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	 * @return
 	 */
 	public String asGroupGraphPattern(String rootVariable, OWLClassExpression expr, boolean needOuterTriplePattern){
-		this.expr = expr;
 		this.needOuterTriplePattern = needOuterTriplePattern;
 		reset();
 		variables.push(rootVariable);
+		
+		// minimize the class expression
+		expr = minimizer.minimizeClone(expr);
+		this.expr = expr;
+		
+		if(expr.equals(df.getOWLThing())) {
+			logger.warn("Expression is logically equivalent to owl:Thing, thus, the SPARQL query returns all triples.");
+		}
+		
+		// convert
 		expr.accept(this);
+		
 		return sparql;
 	}
 	
@@ -189,7 +203,12 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 		}
 		queryString += triplePattern;
 		queryString += "}";
+		queryString += appendix; 
 		return QueryFactory.create(queryString, Syntax.syntaxARQ);
+	}
+	
+	public Query asQuery(String rootVariable, OWLClassExpression expr, Set<? extends OWLEntity> variableEntities){
+		return asQuery(rootVariable, expr, variableEntities, false);
 	}
 	
 	public Query asCountQuery(OWLClassExpression expr){
@@ -199,10 +218,6 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 		queryString += triplePattern;
 		queryString += "}";
 		return QueryFactory.create(queryString, Syntax.syntaxARQ);
-	}
-	
-	public Query asQuery(String rootVariable, OWLClassExpression expr, Set<? extends OWLEntity> variableEntities){
-		return asQuery(rootVariable, expr, variableEntities, false);
 	}
 	
 	public Query asQuery(String rootVariable, OWLClassExpression expr, Set<? extends OWLEntity> variableEntities, boolean count){
@@ -236,7 +251,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 				queryString += " ORDER BY DESC(?cnt)";
 			}
 		}
-		
+		queryString += appendix;
 		return QueryFactory.create(queryString, Syntax.syntaxSPARQL_11);
 	}
 	
@@ -244,6 +259,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 		variables.clear();
 		properties.clear();
 		sparql = "";
+		appendix = "";
 		intersection = new HashMap<Integer, Boolean>();
 		mapping.reset();
 	}
@@ -272,15 +288,14 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	}
 	
 	private void enterIntersection(){
+		naryExpressions.push(1);
 		intersection.put(modalDepth(), true);
 	}
 	
 	private void leaveIntersection(){
+		naryExpressions.pop();
 		intersection.remove(modalDepth());
 	}
-	
-	ParameterizedSparqlString triplePattern = new ParameterizedSparqlString("?s ?p ?o .");
-
 	
 	private String triple(String subject, String predicate, String object){
 		return (subject.startsWith("?") ? subject : "<" + subject + ">") + " " + 
@@ -415,6 +430,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 
 	@Override
 	public void visit(OWLObjectUnionOf ce) {
+		naryExpressions.push(0);
 		List<OWLClassExpression> operands = ce.getOperandsAsList();
 		for (int i = 0; i < operands.size()-1; i++) {
 			sparql += "{";
@@ -425,11 +441,18 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 		sparql += "{";
 		operands.get(operands.size()-1).accept(this);
 		sparql += "}";
+		naryExpressions.pop();
+	}
+	
+	private boolean inUnion() {
+		return !naryExpressions.isEmpty() && naryExpressions.peek().equals(Integer.valueOf(0));
 	}
 
 	@Override
 	public void visit(OWLObjectComplementOf ce) {
-		if(!inIntersection() && modalDepth() == 1 && needOuterTriplePattern){
+		if(!inIntersection() &&
+//				modalDepth() == 1 &&
+				needOuterTriplePattern || inUnion()){
 			sparql += genericTriplePattern();
 		} 
 		sparql += "FILTER NOT EXISTS {";
@@ -460,46 +483,64 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 //		}
 		
 	}
+	
+	private boolean isTrivialConcept(OWLClassExpression ce) {
+		return ce.isOWLThing()
+				|| (ce.getClassExpressionType() == ClassExpressionType.OBJECT_ALL_VALUES_FROM && isTrivialConcept(((OWLObjectAllValuesFrom) ce)
+						.getFiller()));
+	}
 
 	@Override
 	public void visit(OWLObjectAllValuesFrom ce) {
+		OWLClassExpression filler = ce.getFiller();
 		
-		// we can either use double negation on \forall r.A such that we have a logically
-		// equivalent expression \neg \exists r.\neg A
-		// or we use subselects get the individuals whose r successors are only of type A
-		if(allQuantorTranslation == AllQuantorTranslation.DOUBLE_NEGATION){
-			OWLObjectComplementOf doubleNegatedExpression = df.getOWLObjectComplementOf(
-					df.getOWLObjectSomeValuesFrom(
-							ce.getProperty(), 
-							df.getOWLObjectComplementOf(ce.getFiller())));
-			doubleNegatedExpression.accept(this);
-		} else {
-			String subject = variables.peek();
-			String objectVariable = mapping.newIndividualVariable();
-			OWLObjectPropertyExpression propertyExpression = ce.getProperty();
-			OWLObjectProperty predicate = propertyExpression.getNamedProperty();
-			OWLClassExpression filler = ce.getFiller();
-			if(propertyExpression.isAnonymous()){
-				//property expression is inverse of a property
-				sparql += triple(objectVariable, predicate, variables.peek());
-			} else {
-				sparql += triple(variables.peek(), predicate, objectVariable);
+		String subject = variables.peek();
+		String objectVariable = mapping.newIndividualVariable();
+		
+		if(isTrivialConcept(filler)) { 
+			// \forall r.\top is trivial, as everything belongs to that concept
+			// thus, we can omit it if it's used in a conjunction or as complex filler
+			if(!inIntersection()) {
+				sparql += triple(subject, mapping.newPropertyVariable(), objectVariable);
 			}
-			
-			String var = mapping.newIndividualVariable();
-			sparql += "{SELECT " + subject + " (COUNT(" + var + ") AS ?cnt1) WHERE {";
-			sparql += triple(subject, predicate, var);
-			variables.push(var);
-			filler.accept(this);
-			variables.pop();
-			sparql += "} GROUP BY " + subject + "}";
-			
-			var = mapping.newIndividualVariable();
-			sparql += "{SELECT " + subject + " (COUNT(" + var + ") AS ?cnt2) WHERE {";
-			sparql += triple(subject, predicate, var);
-			sparql += "} GROUP BY " + subject + "}";
-			
-			sparql += filter("?cnt1=?cnt2");
+		} else {
+			if(!inIntersection()) {
+				sparql += triple(subject, mapping.newPropertyVariable(), objectVariable);
+			}
+			// we can either use double negation on \forall r.A such that we have a logically
+			// equivalent expression \neg \exists r.\neg A
+			// or we use subselects get the individuals whose r successors are only of type A
+			if(allQuantorTranslation == AllQuantorTranslation.DOUBLE_NEGATION){
+				OWLObjectComplementOf doubleNegatedExpression = df.getOWLObjectComplementOf(
+						df.getOWLObjectSomeValuesFrom(
+								ce.getProperty(), 
+								df.getOWLObjectComplementOf(ce.getFiller())));
+				doubleNegatedExpression.accept(this);
+			} else {
+				OWLObjectPropertyExpression propertyExpression = ce.getProperty();
+				OWLObjectProperty predicate = propertyExpression.getNamedProperty();
+				if(propertyExpression.isAnonymous()){
+					//property expression is inverse of a property
+					sparql += triple(objectVariable, predicate, variables.peek());
+				} else {
+					sparql += triple(variables.peek(), predicate, objectVariable);
+				}
+				
+				String var = mapping.newIndividualVariable();
+				sparql += "{SELECT " + subject + " (COUNT(" + var + ") AS ?cnt1) WHERE {";
+				sparql += triple(subject, predicate, var);
+				variables.push(var);
+				filler.accept(this);
+				variables.pop();
+				sparql += "} GROUP BY " + subject + "}";
+				
+				var = mapping.newIndividualVariable();
+				sparql += "{SELECT " + subject + " (COUNT(" + var + ") AS ?cnt2) WHERE {";
+				sparql += triple(subject, predicate, var);
+				sparql += "} GROUP BY " + subject + "}";
+				
+				sparql += filter("?cnt1=?cnt2");
+			}
 		}
 	}
 
@@ -521,13 +562,18 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 		String objectVariable = mapping.newIndividualVariable();
 		OWLObjectPropertyExpression propertyExpression = ce.getProperty();
 		int cardinality = ce.getCardinality();
-		sparql += "{SELECT " + subjectVariable + " WHERE {";
+		
+		if(inIntersection() || modalDepth() > 1){
+			sparql += "{SELECT " + subjectVariable + " WHERE {";
+		}
+		
 		if(propertyExpression.isAnonymous()){
 			//property expression is inverse of a property
 			sparql += triple(objectVariable, propertyExpression.getNamedProperty(), subjectVariable);
 		} else {
 			sparql += triple(subjectVariable, propertyExpression.getNamedProperty(), objectVariable);
 		}
+		
 		OWLClassExpression filler = ce.getFiller();
 		if(filler.isAnonymous()){
 			String var = mapping.newIndividualVariable();
@@ -539,7 +585,12 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 			sparql += typeTriplePattern(objectVariable, render(filler.asOWLClass()));
 		}
 		
-		sparql += "} GROUP BY " + subjectVariable + " HAVING(COUNT(" + objectVariable + ")>=" + cardinality + ")}";
+		String grouping = " GROUP BY " + subjectVariable + " HAVING(COUNT(" + objectVariable + ")>=" + cardinality + ")";
+		if(inIntersection() || modalDepth() > 1){
+			sparql += "}" + grouping + "}";
+		} else {
+			appendix += grouping;
+		}
 		
 	}
 
@@ -835,6 +886,30 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 		query = converter.asQuery(rootVar, expr).toString();
 		System.out.println(expr + "\n" + query);
 		
+		expr = df.getOWLObjectAllValuesFrom(propR, df.getOWLThing());
+		query = converter.asQuery(rootVar, expr).toString();
+		System.out.println(expr + "\n" + query);
+		
+		expr = df.getOWLObjectAllValuesFrom(propR, df.getOWLObjectAllValuesFrom(propS, df.getOWLThing()));
+		query = converter.asQuery(rootVar, expr).toString();
+		System.out.println(expr + "\n" + query);
+		
+		expr = df.getOWLObjectAllValuesFrom(
+				propR, 
+				df.getOWLObjectIntersectionOf(
+						clsA,
+						df.getOWLObjectAllValuesFrom(propS, df.getOWLThing())));
+		query = converter.asQuery(rootVar, expr).toString();
+		System.out.println(expr + "\n" + query);
+		
+		expr = df.getOWLObjectAllValuesFrom(
+				propR, 
+				df.getOWLObjectUnionOf(
+						clsA,
+						df.getOWLObjectAllValuesFrom(propS, df.getOWLThing())));
+		query = converter.asQuery(rootVar, expr).toString();
+		System.out.println(expr + "\n" + query);
+		
 		expr = df.getOWLObjectAllValuesFrom(propR, clsB);
 		query = converter.asQuery(rootVar, expr).toString();
 		System.out.println(expr + "\n" + query);
@@ -950,6 +1025,24 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 			);
 		query = converter.asQuery(rootVar, expr).toString();
 		System.out.println(expr + "\n" + query);
+		
+		expr = df.getOWLObjectIntersectionOf(
+				clsA,
+				df.getOWLObjectUnionOf(
+						clsB, 
+						df.getOWLObjectComplementOf(
+							df.getOWLObjectSomeValuesFrom(
+									propR, 
+									df.getOWLThing()
+							)
+						)
+				)
+			);
+		query = converter.asQuery(rootVar, expr).toString();
+		System.out.println(expr + "\n" + query);
+		
+		Op op = Algebra.compile(converter.asQuery(rootVar, expr));
+		System.out.println(op);
 		
 	}
 }

@@ -5,6 +5,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import org.aksw.owl2sparql.util.VarGenerator;
+import org.aksw.owl2sparql.util.VariablesMapping;
 import org.semanticweb.owlapi.model.DataRangeType;
 import org.semanticweb.owlapi.model.OWLAnnotationAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLAnnotationPropertyDomainAxiom;
@@ -399,14 +401,15 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 
 	@Override
 	public void visit(OWLSubPropertyChainOfAxiom axiom) {
-		VariablesMapping varGenerator = new VariablesMapping();
+		VarGenerator varGenerator = new VarGenerator();
+		
 		List<OWLObjectPropertyExpression> propertyChain = axiom.getPropertyChain();
 		String subjectVar = this.subjectVar;
 		for (int i = 0; i < propertyChain.size() - 1; i++) {
 			OWLObjectPropertyExpression propertyExpression = propertyChain.get(i);
 			
 			// new object var will be created
-			String objectVar = varGenerator.newIndividualVariable();
+			String objectVar = varGenerator.newVar();
 			
 			sparql += subjectVar + render(propertyExpression) + objectVar + " .";
 			

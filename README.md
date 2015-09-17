@@ -29,3 +29,17 @@ OWLClassExpression ce = ...;
 // convert the class expression into a SPARQL query
 String queryString = converter.convert(ce);
 ```
+
+### Example
+```
+:A and not :r some :B
+
+BASE <http://example.org#>
+SELECT DISTINCT  ?x
+WHERE
+  { ?x a :A
+    FILTER NOT EXISTS {?x :r ?s0 .
+      ?s0 a :B
+    }
+  }
+```

@@ -19,6 +19,7 @@ import org.apache.jena.atlas.logging.Log;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.io.ToStringRenderer;
 import org.semanticweb.owlapi.model.ClassExpressionType;
+import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLClassExpressionVisitor;
@@ -119,6 +120,10 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	
 	private OWLClassExpressionMinimizer minimizer = new OWLClassExpressionMinimizer(df);
 	
+	private boolean useDistinct;
+	
+	private String countVar = "?cnt";
+	
 	public OWLClassExpressionToSPARQLConverter(VariablesMapping mapping) {
 		this.mapping = mapping;
 	}
@@ -146,7 +151,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	}
 
 	/**
-	 * Converts a OWL class expression into a GroupGraphPattern, which can be described 
+	 * Converts an OWL class expression into a GroupGraphPattern, which can be described 
 	 * as the outer-most graph pattern in a query, sometimes also called the query pattern.
 	 * @param rootVariable
 	 * @param expr
@@ -157,7 +162,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	}
 	
 	/**
-	 * Converts a OWL class expression into a GroupGraphPattern, which can be described 
+	 * Converts an OWL class expression into a GroupGraphPattern, which can be described 
 	 * as the outer-most graph pattern in a query, sometimes also called the query pattern.
 	 * @param rootVariable
 	 * @param expr
@@ -189,21 +194,30 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 		return sparql;
 	}
 	
+	/**
+	 * Converts an OWL class expression into a SPARQL query with
+	 * <code>rootVariable</code> as projection variable.
+	 * 
+	 *
+	 * @param ce the OWL class expression to convert
+	 * @param rootVariable the name of the projection variable in the SPARQL
+	 *            query
+	 * @param countQuery whether to return a SELECT (COUNT(?var) as ?cnt) query
+	 * @return the SPARQL query
+	 */
+	public String convert(OWLClassExpression ce, String rootVariable, boolean countQuery){
+		String queryString = createSelectClause(countQuery) + createWhereClause(ce) + createSolutionModifier();
+		
+		return queryString;
+	}
+	
 	public Query asQuery(String rootVariable, OWLClassExpression expr){
 		return asQuery(rootVariable, expr, Collections.<OWLEntity>emptySet());
 	}
 	
-	public Query asQuery(String rootVariable, OWLClassExpression expr, boolean countQuery){
-		String queryString = "SELECT ";
-		String triplePattern = asGroupGraphPattern(rootVariable, expr);
-		if(countQuery){
-			queryString += "(COUNT(DISTINCT " + rootVariable + ") AS ?cnt) WHERE {";
-		} else {
-			queryString += "DISTINCT " + rootVariable + " WHERE {";
-		}
-		queryString += triplePattern;
-		queryString += "}";
-		queryString += appendix; 
+	public Query asQuery(String rootVariable, OWLClassExpression ce, boolean countQuery){
+		String queryString = convert(ce, rootVariable, countQuery);
+		
 		return QueryFactory.create(queryString, Syntax.syntaxARQ);
 	}
 	
@@ -211,19 +225,13 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 		return asQuery(rootVariable, expr, variableEntities, false);
 	}
 	
-	public Query asCountQuery(OWLClassExpression expr){
-		String rootVariable = "?s";
-		String queryString = "SELECT (COUNT(DISTINCT " + rootVariable + ") AS ?cnt) WHERE {";
-		String triplePattern = asGroupGraphPattern(rootVariable, expr);
-		queryString += triplePattern;
-		queryString += "}";
-		return QueryFactory.create(queryString, Syntax.syntaxARQ);
-	}
-	
-	public Query asQuery(String rootVariable, OWLClassExpression expr, Set<? extends OWLEntity> variableEntities, boolean count){
+	public Query asQuery(String rootVariable, OWLClassExpression expr, Set<? extends OWLEntity> variableEntities, boolean countQuery){
 		this.variableEntities = variableEntities;
+		
 		String queryString = "SELECT DISTINCT ";
+		
 		String triplePattern = asGroupGraphPattern(rootVariable, expr);
+		
 		if(variableEntities.isEmpty()){
 			queryString += rootVariable + " WHERE {";
 		} else {
@@ -231,7 +239,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 				String var = mapping.get(owlEntity);
 				queryString += var + " ";
 			}
-			if(count){
+			if(countQuery){
 				queryString += "(COUNT(DISTINCT " + rootVariable + ") AS ?cnt)"; 
 			} else {
 				queryString += rootVariable;
@@ -241,8 +249,9 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 		
 		queryString += triplePattern;
 		queryString += "}";
+		
 		if(!variableEntities.isEmpty()){
-			if(count){
+			if(countQuery){
 				queryString += "GROUP BY ";
 				for (OWLEntity owlEntity : variableEntities) {
 					String var = mapping.get(owlEntity);
@@ -252,7 +261,37 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 			}
 		}
 		queryString += appendix;
+		
 		return QueryFactory.create(queryString, Syntax.syntaxSPARQL_11);
+	}
+	
+	/**
+	 * Whether to return SPARQL queries with DISTINCT keyword.
+	 * @param useDistinct <code>true</code> if use DISTINCT, otherwise <code>false</code>
+	 */
+	public void setUseDistinct(boolean useDistinct) {
+		this.useDistinct = useDistinct;
+	}
+	
+	private String createSelectClause(boolean countQuery) {
+		return "SELECT " + (countQuery ? "(COUNT(" : "") + (useDistinct ? " DISTINCT " : "")  + variables.firstElement() + (countQuery ? " AS " + countVar + ")" : "");
+	}
+	
+	private String createWhereClause(OWLClassExpression ce){
+		return " WHERE " + createGroupGraphPattern(ce);
+	}
+	
+	private String createGroupGraphPattern(OWLClassExpression ce) {
+		ce.accept(this);
+		return "{" + sparql + "}";
+	}
+	
+	private String createSolutionModifier() {
+		return appendix;
+	}
+	
+	private String notExists(String pattern){
+		return "FILTER NOT EXISTS {" + pattern + "}";
 	}
 	
 	private void reset(){

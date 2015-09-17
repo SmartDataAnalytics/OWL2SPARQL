@@ -224,11 +224,11 @@ public class OWLAxiomToSPARQLConverterTest {
 	public void testObjectPropertyRangeAxiom() {
 		OWLAxiom axiom = df.getOWLObjectPropertyRangeAxiom(propR, clsA);
 		
-		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?o\n" + 
+		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" + 
 				"	WHERE\n" + 
-				"	  { ?s ?p ?o\n" + 
-				"	    FILTER NOT EXISTS {?s <http://foo.bar/r> ?s0\n" + 
-				"	      FILTER NOT EXISTS {?s0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/A> }\n" + 
+				"	  { ?s ?p0 ?s0\n" + 
+				"	    FILTER NOT EXISTS {?s <http://foo.bar/r> ?s1\n" + 
+				"	      FILTER NOT EXISTS {?s1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/A> }\n" + 
 				"	    }\n" + 
 				"	  }");
 		Query query = converter.asQuery(axiom);
@@ -240,7 +240,7 @@ public class OWLAxiomToSPARQLConverterTest {
 	public void testDataPropertyRangeAxiom() {
 		OWLAxiom axiom = df.getOWLDataPropertyRangeAxiom(dpT, booleanRange);
 		
-		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?o\n" + 
+		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" + 
 				"			WHERE\n" + 
 				"			  { ?s <http://foo.bar/dpT> ?o\n" + 
 				"			    FILTER ( datatype(?o) = <http://www.w3.org/2001/XMLSchema#boolean> )\n" + 

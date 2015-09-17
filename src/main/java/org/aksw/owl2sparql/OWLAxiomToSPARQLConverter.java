@@ -3,10 +3,9 @@ package org.aksw.owl2sparql;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 import org.aksw.owl2sparql.util.VarGenerator;
-import org.aksw.owl2sparql.util.VariablesMapping;
+import org.semanticweb.owlapi.model.ClassExpressionType;
 import org.semanticweb.owlapi.model.DataRangeType;
 import org.semanticweb.owlapi.model.OWLAnnotationAssertionAxiom;
 import org.semanticweb.owlapi.model.OWLAnnotationPropertyDomainAxiom;
@@ -65,58 +64,123 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 	
 	private String subjectVar = "?x";
 	private String objectVar = "?o";
-	private String sparql;
+	
+	private boolean useDistinct = true;
+	
 	private OWLClassExpressionToSPARQLConverter expressionConverter;
 	
+	private String sparql;
 	
-	public OWLAxiomToSPARQLConverter() {
-	}
+	public OWLAxiomToSPARQLConverter() {}
 	
 	public OWLAxiomToSPARQLConverter(String targetSubjectVariable, String targetObjectVariable) {
 		this.subjectVar = targetSubjectVariable;
 		this.objectVar = targetObjectVariable;
 	}
 	
-	public String convert(String rootVariable, OWLAxiom axiom){
-		this.subjectVar = rootVariable;
-		sparql = "";
-		expressionConverter = new OWLClassExpressionToSPARQLConverter();
-		axiom.accept(this);
-		return sparql;
+	/**
+	 * Converts an OWL axiom into a SPARQL query.
+	 * 
+	 * @param axiom the OWL axiom to convert
+	 * @return the SPARQL query
+	 */
+	public String convert(OWLAxiom axiom){
+		return convert(subjectVar, objectVar, axiom);
 	}
 	
-	public Query asQuery(OWLAxiom axiom){
-		String whereClause = createWhereClause(axiom);
-		String queryString = "SELECT DISTINCT " + subjectVar + " WHERE {";
-		queryString += whereClause;
-		queryString += "}";
-		return QueryFactory.create(queryString, Syntax.syntaxARQ);
+	/**
+	 * Converts an OWL axiom into a SPARQL query with <code>targetSubjectVariable</code>
+	 * as single projection variable.
+	 * 
+	 * @param targetSubjectVariable the name of the projection variable in the SPARQL
+	 *            query
+	 * @param axiom the OWL axiom to convert
+	 * @return the SPARQL query
+	 */
+	public String convert(String targetSubjectVariable, OWLAxiom axiom){
+		return convert(targetSubjectVariable, objectVar, axiom);
 	}
 	
-	public Query asQuery(String targetSubjectVariable, OWLAxiom axiom){
-		this.subjectVar = targetSubjectVariable;
-		String whereClause = createWhereClause(axiom);
-		String queryString = "SELECT DISTINCT " + subjectVar + " WHERE {";
-		queryString += whereClause;
-		queryString += "}";
-		return QueryFactory.create(queryString, Syntax.syntaxARQ);
-	}
-	
-	public Query asQuery(String targetSubjectVariable, String targetObjectVariable, OWLAxiom axiom){
+	/**
+	 * Converts an OWL axiom into a SPARQL query with <code>rootVariable</code>
+	 * as single projection variable.
+	 * 
+	 * @param targetSubjectVariable the name of the projection variable in the SPARQL
+	 *            query
+	 * @param axiom the OWL axiom to convert
+	 * @return the SPARQL query
+	 */
+	public String convert(String targetSubjectVariable, String targetObjectVariable, OWLAxiom axiom) {
 		this.subjectVar = targetSubjectVariable;
 		this.objectVar = targetObjectVariable;
-		String whereClause = createWhereClause(axiom);
-		String queryString = "SELECT DISTINCT " + subjectVar + " WHERE {";
-		queryString += whereClause;
-		queryString += "}";
+		
+		sparql = "";
+
+		String queryString = createSelectClause() + createWhereClause(axiom);
+
+		return queryString;
+	}
+	
+	/**
+	 * Converts an OWL axiom into a SPARQL query using the default variable as
+	 * projection variable.
+	 * 
+	 * @param axiom the OWL axiom
+	 * @return the SPARQL query
+	 */
+	public Query asQuery(OWLAxiom axiom){
+		return asQuery(subjectVar, objectVar, axiom);
+	}
+	
+	/**
+	 * Converts an OWL axiom into a SPARQL query with <code>targetSubjectVariable</code>
+	 * as single projection variable.
+	 * 
+	 * @param targetSubjectVariable the name of the projection variable in the SPARQL
+	 *            query
+	 * @param axiom the OWL axiom to convert
+	 * @return the SPARQL query
+	 */
+	public Query asQuery(String targetSubjectVariable, OWLAxiom axiom){
+		return asQuery(targetSubjectVariable, objectVar, axiom);
+	}
+	
+	/**
+	 * Converts an OWL axiom into a SPARQL query with <code>targetSubjectVariable</code>
+	 * as single projection variable and 
+	 * 
+	 * @param targetSubjectVariable the name of the projection variable in the SPARQL
+	 *            query
+	 * @param axiom the OWL axiom to convert
+	 * @return the SPARQL query
+	 */
+	public Query asQuery(String targetSubjectVariable, String targetObjectVariable, OWLAxiom axiom){
+		
+		String queryString = convert(targetSubjectVariable, targetObjectVariable, axiom);
+		
 		return QueryFactory.create(queryString, Syntax.syntaxARQ);
+	}
+	
+	/**
+	 * Whether to return SPARQL queries with DISTINCT keyword.
+	 * @param useDistinct <code>true</code> if use DISTINCT, otherwise <code>false</code>
+	 */
+	public void setUseDistinct(boolean useDistinct) {
+		this.useDistinct = useDistinct;
+	}
+	
+	private String createSelectClause() {
+		return "SELECT " + (useDistinct ? " DISTINCT " : "") + subjectVar;
 	}
 	
 	private String createWhereClause(OWLAxiom axiom){
-		sparql = "";
+		return " WHERE " + createGroupGraphPattern(axiom);
+	}
+	
+	private String createGroupGraphPattern(OWLAxiom axiom) {
 		expressionConverter = new OWLClassExpressionToSPARQLConverter();
 		axiom.accept(this);
-		return sparql;
+		return "{" + sparql + "}";
 	}
 	
 	private String notExists(String pattern){
@@ -160,7 +224,7 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 		}
 		
 		OWLClassExpression superClass = axiom.getSuperClass();
-		String superClassPattern = expressionConverter.asGroupGraphPattern(subjectVar, superClass);
+		String superClassPattern = expressionConverter.asGroupGraphPattern(subjectVar, superClass, subClass.isOWLThing() && superClass.getClassExpressionType() == ClassExpressionType.OBJECT_COMPLEMENT_OF);
 		sparql += superClassPattern;
 	}
 	

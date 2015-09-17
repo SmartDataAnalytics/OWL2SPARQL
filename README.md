@@ -1,5 +1,4 @@
-# OWL2SPARQL 
-## Yet another OWL To SPARQL Query rewriter
+# OWL2SPARQL - "Yet another OWL To SPARQL Query rewriter"
 
 This project provides a simple converter from OWL axioms and OWL class expressions to SPARQL queries.
 

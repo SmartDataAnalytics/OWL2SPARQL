@@ -292,7 +292,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 		variables.push(rootVariable);
 		
 		// minimize the class expression
-		expr = minimizer.minimizeClone(expr);
+		ce = minimizer.minimizeClone(ce);
 		this.expr = ce;
 		
 		if(expr.equals(df.getOWLThing())) {

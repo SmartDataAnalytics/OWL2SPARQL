@@ -31,9 +31,12 @@ String queryString = converter.convert(ce);
 ```
 
 ### Example
+OWL class expression
 ```
-:A and not :r some :B
-
+:A and not (:r some :B)
+```
+SPARQL query
+```
 BASE <http://example.org#>
 SELECT DISTINCT  ?x
 WHERE

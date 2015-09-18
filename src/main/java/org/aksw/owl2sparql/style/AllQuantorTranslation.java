@@ -17,34 +17,37 @@
  * limitations under the License.
  * #L%
  */
-/**
- * 
- */
-package org.aksw.owl2sparql.util;
+package org.aksw.owl2sparql.style;
 
 /**
+ * How to express an universal restriction, i.e. <code>owl:allValuesFrom</code> in SPARQL.
+ * 
  * @author Lorenz Buehmann
  *
  */
-public class VarGenerator {
-	
-	private final String header = "?";
-	private final String base;
-	private int cnt = 0;
-	
-	public VarGenerator(String base) {
-		this.base = base;
-	}
-	
-	public VarGenerator() {
-		this("s");
-	}
-	
-	public String newVar(){
-		return header + base + cnt++;
-	}
-	
-	public void reset(){
-		cnt = 0;
-	}
+public enum AllQuantorTranslation {
+	/**
+	 * Use double negation, e.g.
+	 * <p>
+	 * <pre>
+	 * FILTER NOT EXISTS { 
+	 * 	?s :p ?o . 
+	 * 	FILTER NOT EXISTS { ?o a :Class }
+	 * }
+	 * </code> 
+	 * </p>
+	 */
+	DOUBLE_NEGATION, 
+	/**
+	 * Use two sub-selects and compare its values, e.g.
+	 * <p>
+	 * <pre>
+	 * ?s ?p ?o .
+	 * {SELECT (COUNT(*) AS ?cnt1) WHERE { ?s :p ?o } }
+	 * {SELECT (COUNT(*) AS ?cnt1) WHERE { ?s :p ?o . ?o a :Class } }
+	 * FILTER (?cnt1 = ?cnt2)
+	 * </pre> 
+	 * </p>
+	 */
+	SUBSELECT_COUNT_EQUALS
 }

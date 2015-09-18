@@ -1,3 +1,22 @@
+/*
+ * #%L
+ * owl2sparql-core
+ * %%
+ * Copyright (C) 2015 AKSW
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package org.aksw.owl2sparql;
 
 import java.util.ArrayDeque;
@@ -13,13 +32,14 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.TreeSet;
 
+import org.aksw.owl2sparql.style.AllQuantorTranslation;
+import org.aksw.owl2sparql.style.EqualityRendering;
+import org.aksw.owl2sparql.style.OWLThingRendering;
 import org.aksw.owl2sparql.util.OWLClassExpressionMinimizer;
 import org.aksw.owl2sparql.util.VariablesMapping;
-import org.apache.jena.atlas.logging.Log;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.io.ToStringRenderer;
 import org.semanticweb.owlapi.model.ClassExpressionType;
-import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLClassExpressionVisitor;
@@ -66,9 +86,6 @@ import org.semanticweb.owlapi.util.DefaultPrefixManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.manchester.cs.owl.owlapi.OWLDataFactoryImpl;
-import uk.ac.manchester.cs.owlapi.dlsyntax.DLSyntaxObjectRenderer;
-
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -78,45 +95,48 @@ import com.hp.hpl.jena.query.Syntax;
 import com.hp.hpl.jena.sparql.algebra.Algebra;
 import com.hp.hpl.jena.sparql.algebra.Op;
 
+import uk.ac.manchester.cs.owl.owlapi.OWLDataFactoryImpl;
+import uk.ac.manchester.cs.owlapi.dlsyntax.DLSyntaxObjectRenderer;
+
+/**
+ * A converter from
+ * <a href="http://www.w3.org/TR/owl2-syntax/#Class_Expressions">OWL 2 class
+ * expressions</a> to SPARQL queries.
+ * 
+ * @author Lorenz Buehmann
+ *
+ */
 public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVisitor, OWLPropertyExpressionVisitor, OWLDataRangeVisitor{
 	
 	private static final Logger logger = LoggerFactory.getLogger(OWLClassExpressionToSPARQLConverter.class);
 	
-	public enum OWLThingRendering{
-		EXPLICIT, GENERIC_TRIPLE;
-	}
 	
-	public enum AllQuantorTranslation{
-		DOUBLE_NEGATION, SUBSELECT_COUNT_EQUALS;
-	}
+	private EqualityRendering equalityRendering = EqualityRendering.TERM_EQUALITY;
 	
-	public enum EqualityRendering{
-		SIMPLE, SAME_TERM;
-	}
-	
-	private EqualityRendering equalityRendering = EqualityRendering.SAME_TERM;
 	private AllQuantorTranslation allQuantorTranslation = AllQuantorTranslation.DOUBLE_NEGATION;
-	private OWLThingRendering owlThingRendering = OWLThingRendering.GENERIC_TRIPLE;
+	
+	private OWLThingRendering owlThingRendering = OWLThingRendering.GENERIC_TRIPLE_PATTERN;
+	
 	private boolean useReasoning = false;
 	
 	private String sparql = "";
 	private String appendix = "";
-	private Stack<String> variables = new Stack<String>();
+	private Stack<String> variables = new Stack<>();
 	
 	private OWLDataFactory df = new OWLDataFactoryImpl();
 	
 	private Multimap<Integer, OWLEntity> properties = HashMultimap.create();
 	
 	private Map<Integer, Boolean> intersection;
-	private Set<? extends OWLEntity> variableEntities = new HashSet<OWLEntity>();
+	private Set<? extends OWLEntity> variableEntities = new HashSet<>();
 	
-	private VariablesMapping mapping;
+	private VariablesMapping mapping = new VariablesMapping();
 	private boolean ignoreGenericTypeStatements = true;
 	private OWLClassExpression expr;
 
 	private boolean needOuterTriplePattern = true;
 	
-	private Deque<Integer> naryExpressions = new ArrayDeque<Integer>();
+	private Deque<Integer> naryExpressions = new ArrayDeque<>();
 	
 	private OWLClassExpressionMinimizer minimizer = new OWLClassExpressionMinimizer(df);
 	
@@ -124,30 +144,10 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	
 	private String countVar = "?cnt";
 	
+	public OWLClassExpressionToSPARQLConverter() {}
+	
 	public OWLClassExpressionToSPARQLConverter(VariablesMapping mapping) {
 		this.mapping = mapping;
-	}
-	
-	public OWLClassExpressionToSPARQLConverter() {
-		mapping = new VariablesMapping();
-	}
-	
-	/**
-	 * @param useReasoning the useReasoning to set
-	 */
-	public void setUseReasoning(boolean useReasoning) {
-		this.useReasoning = useReasoning;
-	}
-	
-	/**
-	 * @param equalityRendering the equalityRendering to set
-	 */
-	public void setEqualityRendering(EqualityRendering equalityRendering) {
-		this.equalityRendering = equalityRendering;
-	}
-	
-	public VariablesMapping getVariablesMapping() {
-		return mapping;
 	}
 
 	/**
@@ -273,6 +273,55 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 		this.useDistinct = useDistinct;
 	}
 	
+	/**
+	 * Since SPARQL 1.1 there is a mechanism called property
+	 * paths (see <a href="http://www.w3.org/TR/sparql11-query/#propertypaths">W3C rec.</a>),
+	 * which allows to add some kind of light-weight inferencing to a SPARQL query.
+	 * 
+	 * Currently, we do the following if enabled
+	 * 
+	 * <ul>
+	 * <li>?s rdf:type :A . -> ?s rdf:type/(rdfs:subClassOf|owl:equivalentClass)* :A . </li>
+	 * </ul>
+	 * 
+	 * Note, this feature only works on query engines that support SPARQL 1.1 . 
+	 *
+	 * @param useReasoning use inferencing
+	 */
+	public void setUseReasoning(boolean useReasoning) {
+		this.useReasoning = useReasoning;
+	}
+	
+	/**
+	 * How to express equality in SPARQL.
+	 * 
+	 * @param equalityRendering the equalityRendering to set
+	 */
+	public void setEqualityRendering(EqualityRendering equalityRendering) {
+		this.equalityRendering = equalityRendering;
+	}
+	
+	/**
+	 * How to translate <code>owl:allValuesFrom</code> into SPARQL.
+	 * 
+	 * @param allQuantorTranslation the allQuantorTranslation to set
+	 */
+	public void setAllQuantorTranslation(AllQuantorTranslation allQuantorTranslation) {
+		this.allQuantorTranslation = allQuantorTranslation;
+	}
+	
+	/**
+	 * How to express <code>owl:Thing</code> in SPARQL.
+	 * @param owlThingRendering the owlThingRendering to set
+	 */
+	public void setOwlThingRendering(OWLThingRendering owlThingRendering) {
+		this.owlThingRendering = owlThingRendering;
+	}
+	
+	public VariablesMapping getVariablesMapping() {
+		return mapping;
+	}
+	
 	private String createSelectClause(boolean countQuery) {
 		return "SELECT " + (countQuery ? "(COUNT(" : "") + (useDistinct ? " DISTINCT " : "")  + variables.firstElement() + (countQuery ? " AS " + countVar + ")" : "");
 	}
@@ -299,7 +348,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 		properties.clear();
 		sparql = "";
 		appendix = "";
-		intersection = new HashMap<Integer, Boolean>();
+		intersection = new HashMap<>();
 		mapping.reset();
 	}
 	
@@ -342,18 +391,6 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 				(object.startsWith("?") ? object : object) + ".\n";
 	}
 	
-	private String triple(String subject, String predicate, OWLLiteral object){
-		return (subject.startsWith("?") ? subject : "<" + subject + ">") + " " + 
-				(predicate.startsWith("?") || predicate.equals("a") ? predicate : "<" + predicate + ">") + " " +
-				render(object) + ".\n";
-	}
-	
-	private String triple(String subject, String predicate, OWLEntity object){
-		return (subject.startsWith("?") ? subject : "<" + subject + ">") + " " + 
-				(predicate.startsWith("?") || predicate.equals("a") ? predicate : "<" + predicate + ">") + " " +
-				render(object) + ".\n";
-	}
-	
 	private String triple(String subject, OWLEntity predicate, OWLEntity object){
 		return (subject.startsWith("?") ? subject : "<" + subject + ">") + " " + 
 				render(predicate) + " " +
@@ -372,12 +409,6 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 				render(object) + ".\n";
 	}
 	
-	private String triple(String subject, String predicate, OWLIndividual object){
-		return (subject.startsWith("?") ? subject : "<" + subject + ">") + " " + 
-				(predicate.startsWith("?") || predicate.equals("a") ? predicate : "<" + predicate + ">") + " " +
-				"<" + object.toStringID() + ">.\n";
-	}
-	
 	private String genericTriplePattern(){
 //		BasicPattern bgp = new BasicPattern();
 //		bgp.add(Triple.create(NodeFactory.createVariable("s"), NodeFactory.createVariable("s"), NodeFactory.createVariable("s")));
@@ -390,7 +421,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	}
 	
 	private String equalExpressions(String expr1, String expr2, boolean negated){
-		return (equalityRendering == EqualityRendering.SAME_TERM) ?
+		return (equalityRendering == EqualityRendering.TERM_EQUALITY) ?
 				(negated ? "!" : "") + "sameTerm(" + expr1 + ", " + expr2 + ")" :
 					expr1 + (negated ? " != " : " = ") + expr2;
 	}
@@ -453,14 +484,14 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 		}
 		Collection<OWLEntity> props = properties.get(modalDepth());
 		if(props.size() > 1){
-			Collection<String> vars = new TreeSet<String>();
+			Collection<String> vars = new TreeSet<>();
 			for (OWLEntity p : props) {
 				if(mapping.containsKey(p)){
 					vars.add(mapping.get(p));
 				}
 			}
 			if(vars.size() == 2){
-				List<String> varList = new ArrayList<String>(vars);
+				List<String> varList = new ArrayList<>(vars);
 				sparql += filter(equalExpressions(varList.get(0), varList.get(1), true));
 			}
 		}
@@ -1083,5 +1114,16 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 		Op op = Algebra.compile(converter.asQuery(rootVar, expr));
 		System.out.println(op);
 		
+		expr = df.getOWLObjectIntersectionOf(
+				clsA,
+				df.getOWLObjectComplementOf(
+					df.getOWLObjectSomeValuesFrom(
+						propR, 
+						clsB
+					)
+				)
+			);
+		query = converter.asQuery(rootVar, expr).toString();
+		System.out.println(expr + "\n" + query);
 	}
 }

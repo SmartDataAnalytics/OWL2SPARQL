@@ -17,34 +17,25 @@
  * limitations under the License.
  * #L%
  */
-/**
- * 
- */
-package org.aksw.owl2sparql.util;
+package org.aksw.owl2sparql.style;
 
 /**
+ * The way how <code>owl:Thing</code> in OWL class expressions is mapped to
+ * SPARQL.
+ * 
+ * <li>{@link #EXPLICIT}</li>
+ * <li>{@link #GENERIC_TRIPLE_PATTERN}</li>
+ *  
  * @author Lorenz Buehmann
  *
  */
-public class VarGenerator {
-	
-	private final String header = "?";
-	private final String base;
-	private int cnt = 0;
-	
-	public VarGenerator(String base) {
-		this.base = base;
-	}
-	
-	public VarGenerator() {
-		this("s");
-	}
-	
-	public String newVar(){
-		return header + base + cnt++;
-	}
-	
-	public void reset(){
-		cnt = 0;
-	}
+public enum OWLThingRendering {
+	/**
+	 * Use a triple pattern <code>?s a owl:Thing .</code> 
+	 */
+	EXPLICIT,
+	/**
+	 * Use a generic triple pattern <code>?s ?p ?o .</code> 
+	 */
+	GENERIC_TRIPLE_PATTERN
 }

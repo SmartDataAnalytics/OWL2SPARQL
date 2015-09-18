@@ -16,6 +16,22 @@ OWLAxiom axiom = ...;
 String queryString = converter.convert(axiom);
 ```
 
+### Example
+OWL axiom (in Manchester OWL Syntax)
+```
+PREFIX: : <http://example.org#>
+ObjectProperty: r
+  Domain: A
+```
+SPARQL query
+```
+PREFIX : <http://example.org#>
+SELECT DISTINCT  ?s
+WHERE
+  { ?s :r ?s0 .
+    ?s a :A
+  }
+```
 ## From OWL class expression to SPARQL query
 
 ### Usage
@@ -31,17 +47,18 @@ String queryString = converter.convert(ce);
 ```
 
 ### Example
-OWL class expression
+OWL class expression (in Manchester OWL Syntax)
 ```
-:A and ( :B or not (:r some :B))
+PREFIX: : <http://example.org#>
+A and ( B or not (r some B))
 ```
 SPARQL query
 ```
-BASE <http://example.org#>
+PREFIX : <http://example.org#>
 SELECT DISTINCT  ?x
 WHERE
   { ?x a :A
-      { ?x a <http://dbpedia.org/ontology/B> }
+      { ?x a :B }
     UNION
       { ?x ?p ?o
         FILTER NOT EXISTS {

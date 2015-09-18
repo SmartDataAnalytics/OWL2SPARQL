@@ -111,32 +111,32 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 	 * @return the SPARQL query
 	 */
 	public String convert(OWLAxiom axiom){
-		return convert(subjectVar, objectVar, axiom);
+		return convert(axiom, subjectVar, objectVar);
 	}
 	
 	/**
 	 * Converts an OWL axiom into a SPARQL query with <code>targetSubjectVariable</code>
 	 * as single projection variable.
-	 * 
+	 * @param axiom the OWL axiom to convert
 	 * @param targetSubjectVariable the name of the projection variable in the SPARQL
 	 *            query
-	 * @param axiom the OWL axiom to convert
+	 * 
 	 * @return the SPARQL query
 	 */
-	public String convert(String targetSubjectVariable, OWLAxiom axiom){
-		return convert(targetSubjectVariable, objectVar, axiom);
+	public String convert(OWLAxiom axiom, String targetSubjectVariable){
+		return convert(axiom, targetSubjectVariable, objectVar);
 	}
 	
 	/**
 	 * Converts an OWL axiom into a SPARQL query with <code>rootVariable</code>
 	 * as single projection variable.
-	 * 
+	 * @param axiom the OWL axiom to convert
 	 * @param targetSubjectVariable the name of the projection variable in the SPARQL
 	 *            query
-	 * @param axiom the OWL axiom to convert
+	 * 
 	 * @return the SPARQL query
 	 */
-	public String convert(String targetSubjectVariable, String targetObjectVariable, OWLAxiom axiom) {
+	public String convert(OWLAxiom axiom, String targetSubjectVariable, String targetObjectVariable) {
 		this.subjectVar = targetSubjectVariable;
 		this.objectVar = targetObjectVariable;
 		
@@ -155,34 +155,34 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 	 * @return the SPARQL query
 	 */
 	public Query asQuery(OWLAxiom axiom){
-		return asQuery(subjectVar, objectVar, axiom);
+		return asQuery(axiom, subjectVar, objectVar);
 	}
 	
 	/**
 	 * Converts an OWL axiom into a SPARQL query with <code>targetSubjectVariable</code>
 	 * as single projection variable.
-	 * 
+	 * @param axiom the OWL axiom to convert
 	 * @param targetSubjectVariable the name of the projection variable in the SPARQL
 	 *            query
-	 * @param axiom the OWL axiom to convert
+	 * 
 	 * @return the SPARQL query
 	 */
-	public Query asQuery(String targetSubjectVariable, OWLAxiom axiom){
-		return asQuery(targetSubjectVariable, objectVar, axiom);
+	public Query asQuery(OWLAxiom axiom, String targetSubjectVariable){
+		return asQuery(axiom, targetSubjectVariable, objectVar);
 	}
 	
 	/**
 	 * Converts an OWL axiom into a SPARQL query with <code>targetSubjectVariable</code>
 	 * as single projection variable and 
-	 * 
+	 * @param axiom the OWL axiom to convert
 	 * @param targetSubjectVariable the name of the projection variable in the SPARQL
 	 *            query
-	 * @param axiom the OWL axiom to convert
+	 * 
 	 * @return the SPARQL query
 	 */
-	public Query asQuery(String targetSubjectVariable, String targetObjectVariable, OWLAxiom axiom){
+	public Query asQuery(OWLAxiom axiom, String targetSubjectVariable, String targetObjectVariable){
 		
-		String queryString = convert(targetSubjectVariable, targetObjectVariable, axiom);
+		String queryString = convert(axiom, targetSubjectVariable, targetObjectVariable);
 		
 		return QueryFactory.create(queryString, Syntax.syntaxARQ);
 	}
@@ -219,17 +219,17 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 			String unionPattern = "";
 			if(classExpressions.size() > 1){
 				for (int i = 0; i < classExpressions.size() - 1; i++) {
-					unionPattern += "{" + expressionConverter.asGroupGraphPattern(subjectVar, classExpressions.get(i)) + "}";
+					unionPattern += "{" + expressionConverter.asGroupGraphPattern(classExpressions.get(i), subjectVar) + "}";
 					unionPattern += " UNION ";
 				}
-				unionPattern += "{" + expressionConverter.asGroupGraphPattern(subjectVar, classExpressions.get(classExpressions.size() - 1)) + "}";
+				unionPattern += "{" + expressionConverter.asGroupGraphPattern(classExpressions.get(classExpressions.size() - 1), subjectVar) + "}";
 			} else {
-				unionPattern = expressionConverter.asGroupGraphPattern(subjectVar, classExpressions.get(0));
+				unionPattern = expressionConverter.asGroupGraphPattern(classExpressions.get(0), subjectVar);
 			}
 			pattern = notExists(unionPattern);
 		} else {
 			for (OWLClassExpression ce : classExpressions) {
-				pattern += notExists(expressionConverter.asGroupGraphPattern(subjectVar, ce));
+				pattern += notExists(expressionConverter.asGroupGraphPattern(ce, subjectVar));
 			}
 		}
 		return pattern;
@@ -245,12 +245,12 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 	public void visit(OWLSubClassOfAxiom axiom) {
 		OWLClassExpression subClass = axiom.getSubClass();
 		if(!subClass.isOWLThing()){// we do not need to convert owl:Thing
-			String subClassPattern = expressionConverter.asGroupGraphPattern(subjectVar, subClass);
+			String subClassPattern = expressionConverter.asGroupGraphPattern(subClass, subjectVar);
 			sparql += subClassPattern;
 		}
 		
 		OWLClassExpression superClass = axiom.getSuperClass();
-		String superClassPattern = expressionConverter.asGroupGraphPattern(subjectVar, superClass, subClass.isOWLThing() && superClass.getClassExpressionType() == ClassExpressionType.OBJECT_COMPLEMENT_OF);
+		String superClassPattern = expressionConverter.asGroupGraphPattern(superClass, subjectVar, subClass.isOWLThing() && superClass.getClassExpressionType() == ClassExpressionType.OBJECT_COMPLEMENT_OF);
 		sparql += superClassPattern;
 	}
 	
@@ -259,7 +259,7 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 		List<OWLClassExpression> classExpressions = axiom.getClassExpressionsAsList();
 		
 		for (OWLClassExpression ce : classExpressions) {
-			sparql += expressionConverter.asGroupGraphPattern(subjectVar, ce);
+			sparql += expressionConverter.asGroupGraphPattern(ce, subjectVar);
 		}
 	}
 	
@@ -270,9 +270,9 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 		for(int i = 0; i < disjointClasses.size(); i++){
 			sparql += "{";
 			OWLClassExpression ce = disjointClasses.remove(i);
-			sparql += expressionConverter.asGroupGraphPattern(subjectVar, ce);
+			sparql += expressionConverter.asGroupGraphPattern(ce, subjectVar);
 			for (OWLClassExpression ce2 : disjointClasses) {
-				sparql += notExists(expressionConverter.asGroupGraphPattern(subjectVar, ce2));
+				sparql += notExists(expressionConverter.asGroupGraphPattern(ce2, subjectVar));
 			}
 			disjointClasses.add(i, ce);
 			sparql += "}";
@@ -285,7 +285,7 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 	@Override
 	public void visit(OWLDisjointUnionAxiom axiom) {
 		OWLClass cls = axiom.getOWLClass();
-		sparql += expressionConverter.asGroupGraphPattern(subjectVar, cls);
+		sparql += expressionConverter.asGroupGraphPattern(cls, subjectVar);
 		
 		List<OWLClassExpression> classExpressions = new LinkedList<>(axiom.getClassExpressions());
 		
@@ -294,7 +294,7 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 			OWLClassExpression ce = classExpressions.remove(i);
 			
 			// add triple pattern for class to be
-			sparql += expressionConverter.asGroupGraphPattern(subjectVar, ce);
+			sparql += expressionConverter.asGroupGraphPattern(ce, subjectVar);
 			
 			// add NOT EXISTS for classes not to be
 			sparql += notExists(subjectVar, classExpressions, false);

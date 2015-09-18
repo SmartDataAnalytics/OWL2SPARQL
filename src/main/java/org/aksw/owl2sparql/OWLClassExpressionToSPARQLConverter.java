@@ -79,7 +79,6 @@ import org.semanticweb.owlapi.model.OWLObjectPropertyExpression;
 import org.semanticweb.owlapi.model.OWLObjectSomeValuesFrom;
 import org.semanticweb.owlapi.model.OWLObjectUnionOf;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
-import org.semanticweb.owlapi.model.OWLPropertyExpression;
 import org.semanticweb.owlapi.model.OWLPropertyExpressionVisitor;
 import org.semanticweb.owlapi.model.PrefixManager;
 import org.semanticweb.owlapi.util.DefaultPrefixManager;
@@ -110,19 +109,6 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	
 	private static final Logger logger = LoggerFactory.getLogger(OWLClassExpressionToSPARQLConverter.class);
 	
-	
-	private EqualityRendering equalityRendering = EqualityRendering.TERM_EQUALITY;
-	
-	private AllQuantorTranslation allQuantorTranslation = AllQuantorTranslation.DOUBLE_NEGATION;
-	
-	private OWLThingRendering owlThingRendering = OWLThingRendering.GENERIC_TRIPLE_PATTERN;
-	
-	private boolean useReasoning = false;
-	
-	private String sparql = "";
-	private String appendix = "";
-	private Stack<String> variables = new Stack<>();
-	
 	private OWLDataFactory df = new OWLDataFactoryImpl();
 	
 	private Multimap<Integer, OWLEntity> properties = HashMultimap.create();
@@ -131,18 +117,32 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	private Set<? extends OWLEntity> variableEntities = new HashSet<>();
 	
 	private VariablesMapping mapping = new VariablesMapping();
-	private boolean ignoreGenericTypeStatements = true;
+	
 	private OWLClassExpression expr;
-
-	private boolean needOuterTriplePattern = true;
 	
 	private Deque<Integer> naryExpressions = new ArrayDeque<>();
 	
 	private OWLClassExpressionMinimizer minimizer = new OWLClassExpressionMinimizer(df);
 	
-	private boolean useDistinct;
+	private boolean ignoreGenericTypeStatements = true;
+
+	private boolean needOuterTriplePattern = true;
+	
+	private boolean useDistinct = true;
+	
+	private boolean useReasoning = false;
+	
+	private EqualityRendering equalityRendering = EqualityRendering.TERM_EQUALITY;
+	
+	private AllQuantorTranslation allQuantorTranslation = AllQuantorTranslation.DOUBLE_NEGATION;
+	
+	private OWLThingRendering owlThingRendering = OWLThingRendering.GENERIC_TRIPLE_PATTERN;
 	
 	private String countVar = "?cnt";
+	
+	private String sparql = "";
+	private String appendix = "";
+	private Stack<String> variables = new Stack<>();
 	
 	public OWLClassExpressionToSPARQLConverter() {}
 	
@@ -151,53 +151,9 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	}
 
 	/**
-	 * Converts an OWL class expression into a GroupGraphPattern, which can be described 
-	 * as the outer-most graph pattern in a query, sometimes also called the query pattern.
-	 * @param rootVariable
-	 * @param expr
-	 * @return
-	 */
-	public String asGroupGraphPattern(String rootVariable, OWLClassExpression expr){
-		return asGroupGraphPattern(rootVariable, expr, false);
-	}
-	
-	/**
-	 * Converts an OWL class expression into a GroupGraphPattern, which can be described 
-	 * as the outer-most graph pattern in a query, sometimes also called the query pattern.
-	 * @param rootVariable
-	 * @param expr
-	 * @return
-	 */
-	public String asGroupGraphPattern(String rootVariable, OWLClassExpression expr, boolean needOuterTriplePattern){
-		this.needOuterTriplePattern = needOuterTriplePattern;
-		reset();
-		variables.push(rootVariable);
-		
-		// minimize the class expression
-		expr = minimizer.minimizeClone(expr);
-		this.expr = expr;
-		
-		if(expr.equals(df.getOWLThing())) {
-			logger.warn("Expression is logically equivalent to owl:Thing, thus, the SPARQL query returns all triples.");
-		}
-		
-		// convert
-		expr.accept(this);
-		
-		return sparql;
-	}
-	
-	public String convert(String rootVariable, OWLPropertyExpression expr){
-		variables.push(rootVariable);
-		sparql = "";
-		expr.accept(this);
-		return sparql;
-	}
-	
-	/**
 	 * Converts an OWL class expression into a SPARQL query with
-	 * <code>rootVariable</code> as projection variable.
-	 * 
+	 * <code>rootVariable</code> as projection variable. It's possible to
+	 * return it as COUNT query if wanted.
 	 *
 	 * @param ce the OWL class expression to convert
 	 * @param rootVariable the name of the projection variable in the SPARQL
@@ -206,31 +162,77 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	 * @return the SPARQL query
 	 */
 	public String convert(OWLClassExpression ce, String rootVariable, boolean countQuery){
-		String queryString = createSelectClause(countQuery) + createWhereClause(ce) + createSolutionModifier();
-		
-		return queryString;
+		return createSelectClause(countQuery) + createWhereClause(ce) + createSolutionModifier();
 	}
 	
-	public Query asQuery(String rootVariable, OWLClassExpression expr){
-		return asQuery(rootVariable, expr, Collections.<OWLEntity>emptySet());
+	/**
+	 * Converts an OWL class expression into a SPARQL query with
+	 * <code>rootVariable</code> as projection variable.
+	 *
+	 * @param ce the OWL class expression to convert
+	 * @param rootVariable the name of the projection variable in the SPARQL
+	 *            query
+	 * @return the SPARQL query
+	 */
+	public Query asQuery(OWLClassExpression ce, String rootVariable){
+		return asQuery(rootVariable, ce, Collections.<OWLEntity>emptySet());
 	}
 	
+	/**
+	 * Converts an OWL class expression into a SPARQL query with
+	 * <code>rootVariable</code> as projection variable. It's possible to
+	 * return it as COUNT query if wanted.
+	 *
+	 * @param ce the OWL class expression to convert
+	 * @param rootVariable the name of the projection variable in the SPARQL
+	 *            query
+	 * @param countQuery whether to return a SELECT (COUNT(?var) as ?cnt) query
+	 * @return the SPARQL query
+	 */
 	public Query asQuery(String rootVariable, OWLClassExpression ce, boolean countQuery){
 		String queryString = convert(ce, rootVariable, countQuery);
 		
 		return QueryFactory.create(queryString, Syntax.syntaxARQ);
 	}
 	
+	/**
+	 * Converts an OWL class expression into a SPARQL query with
+	 * <code>rootVariable</code> as projection variable. It's possible to
+	 * declare a set of OWL entities which will be replaced by variables
+	 * in the query, that are then additionally used as projection variables
+	 * and grouping variables.
+	 *
+	 * @param ce the OWL class expression to convert
+	 * @param rootVariable the name of the projection variable in the SPARQL
+	 *            query
+	 * @param variableEntities a set of entities that are replaced by variables
+	 * @return the SPARQL query
+	 */
 	public Query asQuery(String rootVariable, OWLClassExpression expr, Set<? extends OWLEntity> variableEntities){
 		return asQuery(rootVariable, expr, variableEntities, false);
 	}
 	
+	/**
+	 * Converts an OWL class expression into a SPARQL query with
+	 * <code>rootVariable</code> as projection variable. It's possible to
+	 * declare a set of OWL entities which will be replaced by variables
+	 * in the query, that are then additionally used as projection variables
+	 * and grouping variables. Moreover, it's possible to
+	 * return a COUNT query if wanted.
+	 *
+	 * @param ce the OWL class expression to convert
+	 * @param rootVariable the name of the projection variable in the SPARQL
+	 *            query
+	 * @param variableEntities a set of entities that are replaced by variables
+	 * @param countQuery whether to return a SELECT (COUNT(?var) as ?cnt) query
+	 * @return the SPARQL query
+	 */
 	public Query asQuery(String rootVariable, OWLClassExpression expr, Set<? extends OWLEntity> variableEntities, boolean countQuery){
 		this.variableEntities = variableEntities;
 		
 		String queryString = "SELECT DISTINCT ";
 		
-		String triplePattern = asGroupGraphPattern(rootVariable, expr);
+		String triplePattern = asGroupGraphPattern(expr, rootVariable);
 		
 		if(variableEntities.isEmpty()){
 			queryString += rootVariable + " WHERE {";
@@ -263,6 +265,44 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 		queryString += appendix;
 		
 		return QueryFactory.create(queryString, Syntax.syntaxSPARQL_11);
+	}
+	
+	/**
+	 * Converts an OWL class expression into a GroupGraphPattern, which can be described 
+	 * as the outer-most graph pattern in a query, sometimes also called the query pattern.
+	 * @param ce the OWL class expression
+	 * @param rootVariable  the name of the projection variable
+	 * @return a SPARQL graph pattern
+	 */
+	public String asGroupGraphPattern(OWLClassExpression ce, String rootVariable){
+		return asGroupGraphPattern(ce, rootVariable, false);
+	}
+	
+	/**
+	 * Converts an OWL class expression into a GroupGraphPattern, which can be described 
+	 * as the outer-most graph pattern in a query, sometimes also called the query pattern.
+	 * @param ce the OWL class expression
+	 * @param rootVariable the name of the projection variable
+	 * @param needOuterTriplePattern whether 
+	 * @return a SPARQL graph pattern
+	 */
+	public String asGroupGraphPattern(OWLClassExpression ce, String rootVariable, boolean needOuterTriplePattern){
+		this.needOuterTriplePattern = needOuterTriplePattern;
+		reset();
+		variables.push(rootVariable);
+		
+		// minimize the class expression
+		expr = minimizer.minimizeClone(expr);
+		this.expr = ce;
+		
+		if(expr.equals(df.getOWLThing())) {
+			logger.warn("Expression is logically equivalent to owl:Thing, thus, the SPARQL query returns all triples.");
+		}
+		
+		// convert
+		expr.accept(this);
+		
+		return sparql;
 	}
 	
 	/**
@@ -933,35 +973,35 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 		String rootVar = "?x";
 		
 		OWLClassExpression expr = clsA;
-		String query = converter.asQuery(rootVar, expr).toString();
+		String query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectSomeValuesFrom(propR, clsB);
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectIntersectionOf(
 				df.getOWLObjectSomeValuesFrom(propR, clsB),
 				clsB);
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectUnionOf(
 				clsA,
 				clsB);
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectHasValue(propR, indA);
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectAllValuesFrom(propR, df.getOWLThing());
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectAllValuesFrom(propR, df.getOWLObjectAllValuesFrom(propS, df.getOWLThing()));
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectAllValuesFrom(
@@ -969,7 +1009,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 				df.getOWLObjectIntersectionOf(
 						clsA,
 						df.getOWLObjectAllValuesFrom(propS, df.getOWLThing())));
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectAllValuesFrom(
@@ -977,19 +1017,19 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 				df.getOWLObjectUnionOf(
 						clsA,
 						df.getOWLObjectAllValuesFrom(propS, df.getOWLThing())));
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectAllValuesFrom(propR, clsB);
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectAllValuesFrom(df.getOWLObjectProperty("language", pm), df.getOWLClass("Language", pm));
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectMinCardinality(2, df.getOWLObjectProperty("language", pm), df.getOWLClass("Language", pm));
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectIntersectionOf(
@@ -998,64 +1038,64 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 						2, 
 						df.getOWLObjectProperty("language", pm), 
 						df.getOWLClass("Language", pm)));
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectOneOf(indA, indB);
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectSomeValuesFrom(propR, df.getOWLObjectOneOf(indA, indB));
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectIntersectionOf(
 				clsA, 
 				df.getOWLObjectHasSelf(propR));
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectIntersectionOf(
 				clsA, 
 				df.getOWLDataSomeValuesFrom(dpT, booleanRange));
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectIntersectionOf(
 				clsA, 
 				df.getOWLDataHasValue(dpT, lit));
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectIntersectionOf(
 				clsA, 
 				df.getOWLDataMinCardinality(2, dpT, booleanRange));
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectComplementOf(clsB);
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectIntersectionOf(
 				clsA, 
 				df.getOWLObjectComplementOf(clsB));
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectSomeValuesFrom(propR, 
 				df.getOWLObjectIntersectionOf(
 						clsA, 
 						df.getOWLObjectComplementOf(clsB)));
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLDataAllValuesFrom(dpT, booleanRange);
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLDataAllValuesFrom(dpT,df.getOWLDataOneOf(lit));
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		//variable entity
@@ -1086,14 +1126,14 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 							)
 					)
 				);
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectUnionOf(
 				df.getOWLObjectComplementOf(clsA),
 				df.getOWLObjectComplementOf(clsB)
 			);
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
 		expr = df.getOWLObjectIntersectionOf(
@@ -1108,10 +1148,10 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 						)
 				)
 			);
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 		
-		Op op = Algebra.compile(converter.asQuery(rootVar, expr));
+		Op op = Algebra.compile(converter.asQuery(expr, rootVar));
 		System.out.println(op);
 		
 		expr = df.getOWLObjectIntersectionOf(
@@ -1123,7 +1163,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 					)
 				)
 			);
-		query = converter.asQuery(rootVar, expr).toString();
+		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 	}
 }

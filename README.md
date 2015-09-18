@@ -33,7 +33,7 @@ String queryString = converter.convert(ce);
 ### Example
 OWL class expression
 ```
-:A and not (:r some :B)
+:A and ( :B or not (:r some :B))
 ```
 SPARQL query
 ```
@@ -41,8 +41,13 @@ BASE <http://example.org#>
 SELECT DISTINCT  ?x
 WHERE
   { ?x a :A
-    FILTER NOT EXISTS {?x :r ?s0 .
-      ?s0 a :B
-    }
+      { ?x a <http://dbpedia.org/ontology/B> }
+    UNION
+      { ?x ?p ?o
+        FILTER NOT EXISTS {
+          ?x :r ?s0 .
+          ?s0 a :B
+        }
+      }  
   }
 ```

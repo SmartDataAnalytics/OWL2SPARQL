@@ -1,7 +1,6 @@
-# OWL2SPARQL
-OWL To SPARQL Query Rewriter
+# OWL2SPARQL - "Yet another OWL To SPARQL Query rewriter"
 
-This project is supposed to provide a simple converter from OWL axioms and OWL class expressions to SPARQL queries.
+This project provides a simple converter from OWL axioms and OWL class expressions to SPARQL queries.
 
 ## From OWL axiom to SPARQL query
 
@@ -29,4 +28,26 @@ OWLClassExpression ce = ...;
 
 // convert the class expression into a SPARQL query
 String queryString = converter.convert(ce);
+```
+
+### Example
+OWL class expression
+```
+:A and ( :B or not (:r some :B))
+```
+SPARQL query
+```
+BASE <http://example.org#>
+SELECT DISTINCT  ?x
+WHERE
+  { ?x a :A
+      { ?x a <http://dbpedia.org/ontology/B> }
+    UNION
+      { ?x ?p ?o
+        FILTER NOT EXISTS {
+          ?x :r ?s0 .
+          ?s0 a :B
+        }
+      }  
+  }
 ```

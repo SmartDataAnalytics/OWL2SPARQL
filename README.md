@@ -1,4 +1,6 @@
-# OWL2SPARQL - "Yet another OWL To SPARQL Query rewriter"
+# OWL2SPARQL - "Yet another OWL To SPARQL Query rewriter?!"
+
+[![Build Status](http://ci.aksw.org/jenkins/job/jena-sparql-api/badge/icon)](http://ci.aksw.org/jenkins/job/owl2sparql/)
 
 This project provides a simple converter from OWL axioms and OWL class expressions to SPARQL queries.
 

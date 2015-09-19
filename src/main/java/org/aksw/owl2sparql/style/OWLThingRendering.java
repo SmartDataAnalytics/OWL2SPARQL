@@ -22,10 +22,10 @@ package org.aksw.owl2sparql.style;
 /**
  * The way how <code>owl:Thing</code> in OWL class expressions is mapped to
  * SPARQL.
- * 
+ * <ul>
  * <li>{@link #EXPLICIT}</li>
  * <li>{@link #GENERIC_TRIPLE_PATTERN}</li>
- *  
+ * </ul>
  * @author Lorenz Buehmann
  *
  */

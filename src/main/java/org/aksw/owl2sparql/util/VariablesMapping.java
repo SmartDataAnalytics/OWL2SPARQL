@@ -30,7 +30,8 @@ public class VariablesMapping extends HashMap<OWLEntity, String>{
 	private VarGenerator individualVarGenerator = new VarGenerator("s");
 	
 	/**
-	 * @param entity
+	 * Returns the already used variable for the given entity or creates a new one.
+	 * @param entity the OWL entity
 	 * @return the already used variable for the given entity or creates a new one
 	 */
 	public String getVariable(OWLEntity entity){
@@ -64,6 +65,9 @@ public class VariablesMapping extends HashMap<OWLEntity, String>{
 		return propertyVarGenerator.newVar();
 	}
 	
+	/**
+	 * Reset all settings.
+	 */
 	public void reset(){
 		clear();
 		classVarGenerator.reset();

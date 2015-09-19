@@ -28,26 +28,26 @@ package org.aksw.owl2sparql.style;
 public enum AllQuantorTranslation {
 	/**
 	 * Use double negation, e.g.
-	 * <p>
+	 * <div>
 	 * <pre>
 	 * FILTER NOT EXISTS { 
 	 * 	?s :p ?o . 
 	 * 	FILTER NOT EXISTS { ?o a :Class }
 	 * }
-	 * </code> 
-	 * </p>
+	 * </pre> 
+	 * </div>
 	 */
 	DOUBLE_NEGATION, 
 	/**
 	 * Use two sub-selects and compare its values, e.g.
-	 * <p>
+	 * <div>
 	 * <pre>
 	 * ?s ?p ?o .
 	 * {SELECT (COUNT(*) AS ?cnt1) WHERE { ?s :p ?o } }
 	 * {SELECT (COUNT(*) AS ?cnt1) WHERE { ?s :p ?o . ?o a :Class } }
 	 * FILTER (?cnt1 = ?cnt2)
 	 * </pre> 
-	 * </p>
+	 * </div>
 	 */
 	SUBSELECT_COUNT_EQUALS
 }

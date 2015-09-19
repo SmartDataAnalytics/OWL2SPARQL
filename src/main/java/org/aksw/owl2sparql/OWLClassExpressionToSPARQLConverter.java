@@ -208,8 +208,8 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	 * @param variableEntities a set of entities that are replaced by variables
 	 * @return the SPARQL query
 	 */
-	public Query asQuery(String rootVariable, OWLClassExpression expr, Set<? extends OWLEntity> variableEntities){
-		return asQuery(rootVariable, expr, variableEntities, false);
+	public Query asQuery(String rootVariable, OWLClassExpression ce, Set<? extends OWLEntity> variableEntities){
+		return asQuery(rootVariable, ce, variableEntities, false);
 	}
 	
 	/**
@@ -227,12 +227,12 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	 * @param countQuery whether to return a SELECT (COUNT(?var) as ?cnt) query
 	 * @return the SPARQL query
 	 */
-	public Query asQuery(String rootVariable, OWLClassExpression expr, Set<? extends OWLEntity> variableEntities, boolean countQuery){
+	public Query asQuery(String rootVariable, OWLClassExpression ce, Set<? extends OWLEntity> variableEntities, boolean countQuery){
 		this.variableEntities = variableEntities;
 		
 		String queryString = "SELECT DISTINCT ";
 		
-		String triplePattern = asGroupGraphPattern(expr, rootVariable);
+		String triplePattern = asGroupGraphPattern(ce, rootVariable);
 		
 		if(variableEntities.isEmpty()){
 			queryString += rootVariable + " WHERE {";
@@ -321,7 +321,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	 * Currently, we do the following if enabled
 	 * 
 	 * <ul>
-	 * <li>?s rdf:type :A . -> ?s rdf:type/(rdfs:subClassOf|owl:equivalentClass)* :A . </li>
+	 * <li>?s rdf:type :A . -&gt; ?s rdf:type/(rdfs:subClassOf|owl:equivalentClass)* :A . </li>
 	 * </ul>
 	 * 
 	 * Note, this feature only works on query engines that support SPARQL 1.1 . 

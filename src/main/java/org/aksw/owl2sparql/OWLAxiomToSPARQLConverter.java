@@ -128,12 +128,13 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 	}
 	
 	/**
-	 * Converts an OWL axiom into a SPARQL query with <code>rootVariable</code>
+	 * Converts an OWL axiom into a SPARQL query with <code>targetSubjectVariable</code>
 	 * as single projection variable.
 	 * @param axiom the OWL axiom to convert
-	 * @param targetSubjectVariable the name of the projection variable in the SPARQL
+	 * @param targetSubjectVariable the name of the subject projection variable in the SPARQL
 	 *            query
-	 * 
+	 * @param targetObjectVariable the name of the object projection variable in the SPARQL
+	 *            query
 	 * @return the SPARQL query
 	 */
 	public String convert(OWLAxiom axiom, String targetSubjectVariable, String targetObjectVariable) {
@@ -173,11 +174,12 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 	
 	/**
 	 * Converts an OWL axiom into a SPARQL query with <code>targetSubjectVariable</code>
-	 * as single projection variable and 
+	 * as single projection variable.
 	 * @param axiom the OWL axiom to convert
-	 * @param targetSubjectVariable the name of the projection variable in the SPARQL
+	 * @param targetSubjectVariable the name of the subject projection variable in the SPARQL
 	 *            query
-	 * 
+	 * @param targetObjectVariable the name of the object projection variable in the SPARQL
+	 *            query
 	 * @return the SPARQL query
 	 */
 	public Query asQuery(OWLAxiom axiom, String targetSubjectVariable, String targetObjectVariable){

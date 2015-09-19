@@ -21,10 +21,10 @@ package org.aksw.owl2sparql.style;
 
 /**
  * How to render equality in SPARQL.
- * 
+ * <ul>
  * <li>{@link #VALUE_EQUALTIY}</li>
  * <li>{@link #TERM_EQUALITY}</li>
- * 
+ * </ul>
  * @author Lorenz Buehmann
  *
  */
@@ -38,7 +38,7 @@ public enum EqualityRendering {
 	/**
 	 * Term equality uses the SAMETERM function, e.g. 
 	 * <code>FILTER(SAMETERM(?x, 1))</code> .
-	 * </br>
+	 * <p>
 	 * Term equality only returns true if the RDF terms are identical. So if 
 	 * the RDF term in the database was encoded as <code>“001”^^xsd:integer</code> 
 	 * term equality would give false whereas value equality would return true 

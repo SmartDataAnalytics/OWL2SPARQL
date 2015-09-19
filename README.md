@@ -2,6 +2,33 @@
 
 This project provides a simple converter from OWL axioms and OWL class expressions to SPARQL queries.
 
+## Maven Settings
+```XML
+<repositories>
+    <repository>
+        <id>maven.aksw.internal</id>
+        <name>University Leipzig, AKSW Maven2 Repository</name>
+        <url>http://maven.aksw.org/archiva/repository/internal</url>
+    </repository>
+
+    <repository>
+        <id>maven.aksw.snapshots</id>
+        <name>University Leipzig, AKSW Maven2 Repository</name>
+        <url>http://maven.aksw.org/archiva/repository/snapshots</url>
+    </repository>
+</repositories>
+
+<dependencies>
+    <dependency>
+        <groupId>org.aksw.owl2sparql</groupId>
+        <artifactId>owl2sparql-core</artifactId>
+        <version>0.1</version>
+    </dependency>
+
+    ...
+</dependencies>
+```
+
 ## From OWL axiom to SPARQL query
 
 ### Usage
@@ -12,7 +39,7 @@ OWLAxiomToSPARQLConverter converter = new OWLAxiomToSPARQLConverter("?s","?o");
 // provide some OWL axiom using OWL API datastructures
 OWLAxiom axiom = ...;
 
-// convert the axiom into a SPARQLquery
+// convert the axiom into a SPARQL query
 String queryString = converter.convert(axiom);
 ```
 

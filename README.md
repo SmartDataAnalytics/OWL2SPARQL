@@ -1,4 +1,6 @@
-# OWL2SPARQL - "Yet another OWL To SPARQL Query rewriter"
+# OWL2SPARQL - "Yet another OWL To SPARQL Query rewriter?!"
+
+[![Build Status](http://ci.aksw.org/jenkins/job/jena-sparql-api/badge/icon)](http://ci.aksw.org/jenkins/job/owl2sparql/)
 
 This project provides a simple converter from OWL axioms and OWL class expressions to SPARQL queries.
 
@@ -95,3 +97,10 @@ WHERE
       }  
   }
 ```
+
+## License
+The source code of this repo is published under the [Apache License Version 2.0](https://github.com/AKSW/owl2sparql/blob/master/LICENSE).
+
+This project makes use of several dependencies: When in doubt, please cross-check with the respective projects:
+* [Apache Jena](https://jena.apache.org/) (Apache License 2.0)
+* [Guava](http://code.google.com/p/guava-libraries/) (Apache License 2.0)

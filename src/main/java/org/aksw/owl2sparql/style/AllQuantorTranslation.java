@@ -20,7 +20,7 @@
 package org.aksw.owl2sparql.style;
 
 /**
- * How to express an universal restriction, i.e. <code>owl:allValuesFrom</code> in SPARQL.
+ * How to express a universal restriction, i.e. <code>owl:allValuesFrom</code> in SPARQL.
  * 
  * @author Lorenz Buehmann
  *

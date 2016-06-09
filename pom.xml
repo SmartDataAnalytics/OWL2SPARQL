@@ -59,13 +59,15 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>1.7</maven.compiler.source>
 		<maven.compiler.target>1.7</maven.compiler.target>
+		<owlapi.version>4.2.4</owlapi.version>
+		<jena.version>2.13.0</jena.version>
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>net.sourceforge.owlapi</groupId>
 			<artifactId>owlapi-distribution</artifactId>
-			<version>3.5.3</version>
+			<version>${owlapi.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
@@ -81,7 +83,7 @@
 		<dependency>
 			<groupId>org.apache.jena</groupId>
 			<artifactId>jena-arq</artifactId>
-			<version>2.13.0</version>
+			<version>${jena.version}</version>
 		</dependency>
 	</dependencies>
 
@@ -153,6 +155,14 @@
 				<configuration>
 					<useReleaseProfile>false</useReleaseProfile>
 					<autoVersionSubmodules>true</autoVersionSubmodules>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.amashchenko.maven.plugin</groupId>
+				<artifactId>gitflow-maven-plugin</artifactId>
+				<version>1.2.2</version>
+				<configuration>
+					<!-- optional configuration -->
 				</configuration>
 			</plugin>
 		</plugins>

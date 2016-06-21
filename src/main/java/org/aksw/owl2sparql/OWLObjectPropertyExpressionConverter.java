@@ -22,12 +22,9 @@
  */
 package org.aksw.owl2sparql;
 
-import org.semanticweb.owlapi.model.OWLDataProperty;
-import org.semanticweb.owlapi.model.OWLObjectInverseOf;
-import org.semanticweb.owlapi.model.OWLObjectProperty;
-import org.semanticweb.owlapi.model.OWLPropertyExpression;
-import org.semanticweb.owlapi.model.OWLPropertyExpressionVisitor;
-import org.semanticweb.owlapi.model.OWLPropertyExpressionVisitorEx;
+import org.semanticweb.owlapi.model.*;
+
+import javax.annotation.Nonnull;
 
 /**
  * @author Lorenz Buehmann
@@ -58,6 +55,12 @@ public class OWLObjectPropertyExpressionConverter implements OWLPropertyExpressi
 	 */
 	@Override
 	public String visit(OWLDataProperty property) {
+		return property.toStringID();
+	}
+
+	@Nonnull
+	@Override
+	public String visit(@Nonnull OWLAnnotationProperty property) {
 		return property.toStringID();
 	}
 

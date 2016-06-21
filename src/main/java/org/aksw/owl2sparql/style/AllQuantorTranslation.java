@@ -30,6 +30,33 @@ public enum AllQuantorTranslation {
 	 * Use double negation, e.g.
 	 * <div>
 	 * <pre>
+	 * FILTER NOT EXISTS {
+	 * 	?s :p ?o .
+	 * 	FILTER NOT EXISTS { ?o a :Class }
+	 * }
+	 * </pre>
+	 * And addition, this mode tries to cover the completed semantics of \forall by also addressing the case in which
+	 * there is no :p successor at all. This leads to the graph pattern
+	 * <pre>
+	 * {
+	 * ?s ?p ?o .
+	 * FILTER NOT EXISTS {
+	 *	?s :p ?o1 .
+	 * } UNION {
+	 * ?s :p ?o .
+	 * FILTER NOT EXISTS {
+	 *	?s :p ?o .
+	 * 	FILTER NOT EXISTS { ?o a :Class }
+	 * }
+	 * }
+	 * </pre>
+	 * </div>
+	 */
+	DOUBLE_NEGATION_STRICT,
+	/**
+	 * Use double negation, e.g.
+	 * <div>
+	 * <pre>
 	 * FILTER NOT EXISTS { 
 	 * 	?s :p ?o . 
 	 * 	FILTER NOT EXISTS { ?o a :Class }

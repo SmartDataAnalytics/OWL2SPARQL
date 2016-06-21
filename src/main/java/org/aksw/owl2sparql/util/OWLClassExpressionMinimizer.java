@@ -91,7 +91,7 @@ public class OWLClassExpressionMinimizer implements OWLClassExpressionVisitorEx<
 			operands.set(i, operands.get(i).accept(this));
 		}
 		
-		Set<OWLClassExpression> newOperands = new HashSet<OWLClassExpression>(operands);
+		Set<OWLClassExpression> newOperands = new HashSet<>(operands);
 		
 		if(newOperands.size() == 1){
 			return newOperands.iterator().next().accept(this);
@@ -119,9 +119,10 @@ public class OWLClassExpressionMinimizer implements OWLClassExpressionVisitorEx<
 	}
 
 	/**
-	 * @param op1
-	 * @param op2
-	 * @return
+	 * Checks whether {@code subclass} is a subclass of {@code superclass}.
+	 * @param subClass the sub class
+	 * @param superClass the super class
+	 * @return whether {@code subclass} is a subclass of {@code superclass}
 	 */
 	private boolean isSubClassOf(OWLClassExpression subClass, OWLClassExpression superClass) {
 		return superClass.isOWLThing();
@@ -137,7 +138,7 @@ public class OWLClassExpressionMinimizer implements OWLClassExpressionVisitorEx<
 		for (int i = 0; i < operands.size(); i++) {
 			operands.set(i, operands.get(i).accept(this));
 		}
-		Set<OWLClassExpression> newOperands = new HashSet<OWLClassExpression>(operands);
+		Set<OWLClassExpression> newOperands = new HashSet<>(operands);
 		
 		if(newOperands.size() == 1){
 			return newOperands.iterator().next().accept(this);

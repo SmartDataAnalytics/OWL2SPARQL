@@ -194,11 +194,16 @@ public class OWLClassExpressionMinimizer implements OWLClassExpressionVisitorEx<
 	@Override
 	public OWLClassExpression visit(OWLObjectSomeValuesFrom ce) {
 		OWLClassExpression filler = ce.getFiller();
-		OWLClassExpression shortendedFiller = filler.accept(this);
-		if(shortendedFiller.isOWLNothing()){
+		OWLClassExpression shortenedFiller = filler.accept(this);
+		if(shortenedFiller.isOWLNothing()){// \exists r.\bottom \equiv \bottom
 			return df.getOWLNothing();
-		} else if(filler != shortendedFiller){
-			return df.getOWLObjectSomeValuesFrom(ce.getProperty(), shortendedFiller);
+		} else if(filler != shortenedFiller){
+			return df.getOWLObjectSomeValuesFrom(ce.getProperty(), shortenedFiller);
+		}
+
+		// convert r some {a} to r value a
+		if(shortenedFiller instanceof OWLObjectOneOf && ((OWLObjectOneOf) shortenedFiller).getIndividuals().size() == 1) {
+			return df.getOWLObjectHasValue(ce.getProperty(), ((OWLObjectOneOf) shortenedFiller).getIndividuals().iterator().next());
 		}
 		return ce;
 	}

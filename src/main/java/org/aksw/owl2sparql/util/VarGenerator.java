@@ -28,7 +28,7 @@ package org.aksw.owl2sparql.util;
  */
 public class VarGenerator {
 	
-	private final String header = "?";
+	private static final String header = "?";
 	private final String base;
 	private int cnt = 0;
 	

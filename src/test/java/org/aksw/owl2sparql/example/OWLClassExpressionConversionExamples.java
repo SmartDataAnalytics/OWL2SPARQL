@@ -26,14 +26,17 @@ import com.hp.hpl.jena.shared.PrefixMapping;
 import com.hp.hpl.jena.shared.impl.PrefixMappingImpl;
 import org.aksw.owl2sparql.OWLClassExpressionToSPARQLConverter;
 import org.aksw.owl2sparql.style.AllQuantorTranslation;
+import org.aksw.owl2sparql.util.OWLClassExpressionMinimizer;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.io.ToStringRenderer;
+import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntax;
 import org.semanticweb.owlapi.manchestersyntax.renderer.ManchesterOWLSyntaxOWLObjectRendererImpl;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.util.DefaultPrefixManager;
 import org.semanticweb.owlapi.vocab.OWLFacet;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
 import java.util.TreeSet;
 
@@ -52,6 +55,7 @@ public class OWLClassExpressionConversionExamples {
 		OWLOntologyManager man = OWLManager.createOWLOntologyManager();
 		OWLDataFactory df = man.getOWLDataFactory();
 		PrefixManager pm = new DefaultPrefixManager(NS);
+		OWLClassExpressionMinimizer minimizer = new OWLClassExpressionMinimizer(df);
 
 		OWLClass clsA = df.getOWLClass("A", pm);
 		OWLClass clsB = df.getOWLClass("B", pm);
@@ -219,7 +223,8 @@ public class OWLClassExpressionConversionExamples {
 
 		HTMLTableBuilder html = new HTMLTableBuilder("OWL To SPARQL Converter", true, classExpressions.size(), 2);
 		html.addTableHeader("Class Expression", "SPARQL Query");
-		String[] keywords = {"WHERE", "SELECT", "DISTINCT", "FILTER", "NOT", "EXISTS", "UNION", "OPTIONAL", "GROUP BY", "HAVING", "COUNT", "IN", "PREFIX", "BASE"};
+		String[] keywords = {"WHERE", "SELECT", "DISTINCT", "FILTER", "NOT", "EXISTS", "UNION", "OPTIONAL", "GROUP BY", "HAVING", "COUNT", " IN", "PREFIX", "BASE"};
+
 		for (OWLClassExpression ce : new TreeSet<>(classExpressions)) {
 			Query query = converter.asQuery(ce, rootVar);
 			PrefixMapping pm2 = new PrefixMappingImpl();
@@ -235,12 +240,28 @@ public class OWLClassExpressionConversionExamples {
 			query.setPrefixMapping(pm2);
 			query.setBaseURI(NS);
 			System.out.println(ce + "\n" + query);
-			String s = query.toString();
-			s = s.replace("<", "&lt;").replace(">", "&gt;");
-			for (String keyword : keywords) {
-				s = s.replace(keyword , "<b>" + keyword + "</b>");
+
+			String ceString = ce.toString();
+			String queryString = query.toString();
+
+			// add comment if CE was rewritten
+			OWLClassExpression minCE = minimizer.minimize(ce);
+			if(!ce.equals(minCE)) {
+				ceString += "\n(logically equivalent to\n" + minCE.toString() + ")";
 			}
-			html.addRowValues(ce.toString(), "<pre>" + s + "</pre>");
+			// format OWL class expression
+			for(ManchesterOWLSyntax keyword : ManchesterOWLSyntax.values()) {
+				if(keyword.isClassExpressionConnectiveKeyword() || keyword.isClassExpressionQuantiferKeyword())
+				ceString = ceString.replace(keyword.keyword(), "<b>" + keyword + "</b>");
+			}
+
+			// format SPARQL query
+			queryString = queryString.replace("<", "&lt;").replace(">", "&gt;");
+			for (String keyword : keywords) {
+				queryString = queryString.replace(keyword , "<b>" + keyword + "</b>");
+			}
+			// add to HTML table
+			html.addRowValues("<pre>" + ceString + "</pre>", "<pre>" + queryString + "</pre>");
 		}
 		com.google.common.io.Files.write(html.build(), new File("examples/owl2sparql-examples.html"), Charsets.UTF_8);
 //		Files.write(Paths.get("/tmp/owl2sparql.html"), Arrays.asList(html.build().split("\n")), Charset.forName("UTF-8"));

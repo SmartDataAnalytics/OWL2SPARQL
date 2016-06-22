@@ -349,9 +349,7 @@ This project makes use of several dependencies: When in doubt, please cross-chec
 
 <b>SELECT</b> <b>DISTINCT</b>  ?x
 <b>WHERE</b>
-  { ?x &lt;r&gt; ?s0
-    VALUES ?s0 { &lt;a&gt; }
-  }
+  { ?x &lt;r&gt; &lt;a&gt;}
 </pre></td></tr>
 <tr><td><pre>r <b>some</b> ({a , b})</pre></td><td><pre><b>BASE</b>    &lt;http://example.org/ontology/&gt;
 

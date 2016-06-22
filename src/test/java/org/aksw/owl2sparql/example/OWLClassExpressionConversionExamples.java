@@ -1,3 +1,22 @@
+/*
+ * #%L
+ * owl2sparql-core
+ * %%
+ * Copyright (C) 2015 - 2016 AKSW
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
 package org.aksw.owl2sparql.example;
 
 import com.google.common.base.Charsets;
@@ -16,8 +35,6 @@ import org.semanticweb.owlapi.vocab.OWLFacet;
 
 import java.io.File;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
@@ -31,7 +48,7 @@ public class OWLClassExpressionConversionExamples {
 		OWLClassExpressionToSPARQLConverter converter = new OWLClassExpressionToSPARQLConverter();
 		converter.setAllQuantorTranslation(AllQuantorTranslation.DOUBLE_NEGATION);
 
-		String NS = "http://dbpedia.org/ontology/";
+		String NS = "http://example.org/ontology/";
 		OWLOntologyManager man = OWLManager.createOWLOntologyManager();
 		OWLDataFactory df = man.getOWLDataFactory();
 		PrefixManager pm = new DefaultPrefixManager(NS);
@@ -225,8 +242,7 @@ public class OWLClassExpressionConversionExamples {
 			}
 			html.addRowValues(ce.toString(), "<pre>" + s + "</pre>");
 		}
-		System.out.println(html.build());
-		com.google.common.io.Files.write(html.build(), new File("/tmp/owl2sparql.html"), Charsets.UTF_8);
+		com.google.common.io.Files.write(html.build(), new File("examples/owl2sparql-examples.html"), Charsets.UTF_8);
 //		Files.write(Paths.get("/tmp/owl2sparql.html"), Arrays.asList(html.build().split("\n")), Charset.forName("UTF-8"));
 	}
 }

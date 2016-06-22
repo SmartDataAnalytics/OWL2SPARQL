@@ -345,7 +345,9 @@ This project makes use of several dependencies: When in doubt, please cross-chec
     <b>FILTER</b> <b>NOT</b> <b>EXISTS</b> {?s0 rdf:type &lt;B&gt;}
   }
 </pre></td></tr>
-<tr><td><pre>r <b>some</b> ({a})</pre></td><td><pre><b>BASE</b>    &lt;http://example.org/ontology/&gt;
+<tr><td><pre>r <b>some</b> ({a})
+logically equivalent to
+r value a</pre></td><td><pre><b>BASE</b>    &lt;http://example.org/ontology/&gt;
 
 <b>SELECT</b> <b>DISTINCT</b>  ?x
 <b>WHERE</b>
@@ -381,7 +383,9 @@ This project makes use of several dependencies: When in doubt, please cross-chec
     }
   }
 </pre></td></tr>
-<tr><td><pre>r <b>only</b> Thing</pre></td><td><pre><b>BASE</b>    &lt;http://example.org/ontology/&gt;
+<tr><td><pre>r <b>only</b> Thing
+logically equivalent to
+Thing</pre></td><td><pre><b>BASE</b>    &lt;http://example.org/ontology/&gt;
 
 <b>SELECT</b> <b>DISTINCT</b>  ?x
 <b>WHERE</b>
@@ -389,7 +393,9 @@ This project makes use of several dependencies: When in doubt, please cross-chec
 </pre></td></tr>
 <tr><td><pre>r <b>only</b> 
     (A
-     <b>and</b> (s <b>only</b> Thing))</pre></td><td><pre><b>BASE</b>    &lt;http://example.org/ontology/&gt;
+     <b>and</b> (s <b>only</b> Thing))
+logically equivalent to
+r only A</pre></td><td><pre><b>BASE</b>    &lt;http://example.org/ontology/&gt;
 <b>PREFIX</b>  rdf:  &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt;
 
 <b>SELECT</b> <b>DISTINCT</b>  ?x
@@ -401,13 +407,17 @@ This project makes use of several dependencies: When in doubt, please cross-chec
   }
 </pre></td></tr>
 <tr><td><pre>r <b>only</b> 
-    (A <b>or</b> (s <b>only</b> Thing))</pre></td><td><pre><b>BASE</b>    &lt;http://example.org/ontology/&gt;
+    (A <b>or</b> (s <b>only</b> Thing))
+logically equivalent to
+Thing</pre></td><td><pre><b>BASE</b>    &lt;http://example.org/ontology/&gt;
 
 <b>SELECT</b> <b>DISTINCT</b>  ?x
 <b>WHERE</b>
   { ?x ?p ?o}
 </pre></td></tr>
-<tr><td><pre>r <b>only</b> (s <b>only</b> Thing)</pre></td><td><pre><b>BASE</b>    &lt;http://example.org/ontology/&gt;
+<tr><td><pre>r <b>only</b> (s <b>only</b> Thing)
+logically equivalent to
+Thing</pre></td><td><pre><b>BASE</b>    &lt;http://example.org/ontology/&gt;
 
 <b>SELECT</b> <b>DISTINCT</b>  ?x
 <b>WHERE</b>

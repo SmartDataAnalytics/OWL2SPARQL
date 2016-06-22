@@ -314,15 +314,15 @@ This project makes use of several dependencies: When in doubt, please cross-chec
 
 <b>SELECT</b> <b>DISTINCT</b>  ?x
 <b>WHERE</b>
-  { <b>FILTER</b> <b>NOT</b> <b>EXISTS</b> {?x rdf:type &lt;B&gt;}}
+  { ?x ?p ?o
+    <b>FILTER</b> <b>NOT</b> <b>EXISTS</b> {?x rdf:type &lt;B&gt;}
+  }
 </pre></td></tr>
 <tr><td><pre>{a , b}</pre></td><td><pre><b>BASE</b>    &lt;http://example.org/ontology/&gt;
 
 <b>SELECT</b> <b>DISTINCT</b>  ?x
 <b>WHERE</b>
-  { ?x ?p ?o
-    <b>FILTER</b> ( ?x<b> IN</b> (&lt;a&gt;, &lt;b&gt;) )
-  }
+  { VALUES ?x { &lt;a&gt; &lt;b&gt; }}
 </pre></td></tr>
 <tr><td><pre>r <b>some</b> B</pre></td><td><pre><b>BASE</b>    &lt;http://example.org/ontology/&gt;
 <b>PREFIX</b>  rdf:  &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt;
@@ -350,7 +350,7 @@ This project makes use of several dependencies: When in doubt, please cross-chec
 <b>SELECT</b> <b>DISTINCT</b>  ?x
 <b>WHERE</b>
   { ?x &lt;r&gt; ?s0
-    <b>FILTER</b> ( ?s0<b> IN</b> (&lt;a&gt;) )
+    VALUES ?s0 { &lt;a&gt; }
   }
 </pre></td></tr>
 <tr><td><pre>r <b>some</b> ({a , b})</pre></td><td><pre><b>BASE</b>    &lt;http://example.org/ontology/&gt;
@@ -358,7 +358,7 @@ This project makes use of several dependencies: When in doubt, please cross-chec
 <b>SELECT</b> <b>DISTINCT</b>  ?x
 <b>WHERE</b>
   { ?x &lt;r&gt; ?s0
-    <b>FILTER</b> ( ?s0<b> IN</b> (&lt;a&gt;, &lt;b&gt;) )
+    VALUES ?s0 { &lt;a&gt; &lt;b&gt; }
   }
 </pre></td></tr>
 <tr><td><pre>language <b>only</b> Language</pre></td><td><pre><b>BASE</b>    &lt;http://example.org/ontology/&gt;
@@ -366,7 +366,7 @@ This project makes use of several dependencies: When in doubt, please cross-chec
 
 <b>SELECT</b> <b>DISTINCT</b>  ?x
 <b>WHERE</b>
-  { ?x ?p0 ?s0
+  { ?x ?p ?o
     <b>FILTER</b> <b>NOT</b> <b>EXISTS</b> {?x &lt;language&gt; ?s1
       <b>FILTER</b> <b>NOT</b> <b>EXISTS</b> {?s1 rdf:type &lt;Language&gt;}
     }
@@ -377,7 +377,7 @@ This project makes use of several dependencies: When in doubt, please cross-chec
 
 <b>SELECT</b> <b>DISTINCT</b>  ?x
 <b>WHERE</b>
-  { ?x ?p0 ?s0
+  { ?x ?p ?o
     <b>FILTER</b> <b>NOT</b> <b>EXISTS</b> {?x &lt;r&gt; ?s1
       <b>FILTER</b> <b>NOT</b> <b>EXISTS</b> {?s1 rdf:type &lt;B&gt;}
     }
@@ -396,7 +396,7 @@ This project makes use of several dependencies: When in doubt, please cross-chec
 
 <b>SELECT</b> <b>DISTINCT</b>  ?x
 <b>WHERE</b>
-  { ?x ?p0 ?s0
+  { ?x ?p ?o
     <b>FILTER</b> <b>NOT</b> <b>EXISTS</b> {?x &lt;r&gt; ?s1
       <b>FILTER</b> <b>NOT</b> <b>EXISTS</b> {?s1 rdf:type &lt;A&gt;}
     }
@@ -487,7 +487,7 @@ This project makes use of several dependencies: When in doubt, please cross-chec
 
 <b>SELECT</b> <b>DISTINCT</b>  ?x
 <b>WHERE</b>
-  { ?x ?p0 ?s0
+  { ?x ?p ?o
     <b>FILTER</b> <b>NOT</b> <b>EXISTS</b> {?x &lt;t&gt; ?s1
       <b>FILTER</b> ( datatype(?s1) != xsd:boolean )
     }
@@ -497,7 +497,7 @@ This project makes use of several dependencies: When in doubt, please cross-chec
 
 <b>SELECT</b> <b>DISTINCT</b>  ?x
 <b>WHERE</b>
-  { ?x ?p0 ?s0
+  { ?x ?p ?o
     <b>FILTER</b> <b>NOT</b> <b>EXISTS</b> {?x &lt;t&gt; ?s1
       <b>FILTER</b> ( ?s1 <b>NOT</b><b> IN</b> (1) )
     }

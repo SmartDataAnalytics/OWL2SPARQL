@@ -1,7 +1,10 @@
 # OWL2SPARQL - "Yet another OWL To SPARQL Query rewriter?!"
 
 [![Build Status](http://ci.aksw.org/jenkins/job/jena-sparql-api/badge/icon)](http://ci.aksw.org/jenkins/job/owl2sparql/)
-
+<a href="https://scan.coverity.com/projects/aksw-owl2sparql">
+  <img alt="Coverity Scan Build Status"
+       src="https://scan.coverity.com/projects/9256/badge.svg"/>
+</a>
 This project provides a simple converter from OWL axioms and OWL class expressions to SPARQL queries.
 
 ## Maven Settings

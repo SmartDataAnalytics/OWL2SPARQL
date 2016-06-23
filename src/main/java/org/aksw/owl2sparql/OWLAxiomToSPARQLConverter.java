@@ -78,6 +78,7 @@ import com.hp.hpl.jena.query.ParameterizedSparqlString;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.query.Syntax;
+import org.slf4j.LoggerFactory;
 
 /**
  * A converter from <a href="http://www.w3.org/TR/owl2-syntax/#Axioms">OWL 2
@@ -87,6 +88,8 @@ import com.hp.hpl.jena.query.Syntax;
  *
  */
 public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
+
+	private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(OWLAxiomToSPARQLConverter.class);
 	
 	private String subjectVar = "?x";
 	private String objectVar = "?o";
@@ -140,7 +143,8 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 	public String convert(OWLAxiom axiom, String targetSubjectVariable, String targetObjectVariable) {
 		this.subjectVar = targetSubjectVariable;
 		this.objectVar = targetObjectVariable;
-		
+
+		LOGGER.debug("Converting axiom {}", axiom);
 		sparql = "";
 
 		String queryString = createSelectClause() + createWhereClause(axiom);
@@ -245,18 +249,21 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 
 	@Override
 	public void visit(OWLSubClassOfAxiom axiom) {
+		// process subclass
 		OWLClassExpression subClass = axiom.getSubClass();
 		if(!subClass.isOWLThing()){// we do not need to convert owl:Thing
 			String subClassPattern = expressionConverter.asGroupGraphPattern(subClass, subjectVar);
 			sparql += subClassPattern;
 		}
-		
+
+		// process superclass
 		OWLClassExpression superClass = axiom.getSuperClass();
+		boolean needsOuterTriplePattern = subClass.isOWLThing() &&
+				(superClass.getClassExpressionType() == ClassExpressionType.OBJECT_COMPLEMENT_OF ||
+				superClass.getClassExpressionType() == ClassExpressionType.DATA_ALL_VALUES_FROM ||
+				superClass.getClassExpressionType() == ClassExpressionType.OBJECT_ALL_VALUES_FROM);
 		String superClassPattern = expressionConverter.asGroupGraphPattern(superClass, subjectVar,
-																		   subClass.isOWLThing() &&
-																				   (superClass.getClassExpressionType() == ClassExpressionType.OBJECT_COMPLEMENT_OF ||
-																					superClass.getClassExpressionType() == ClassExpressionType.DATA_ALL_VALUES_FROM ||
-																					superClass.getClassExpressionType() == ClassExpressionType.OBJECT_ALL_VALUES_FROM));
+																		   needsOuterTriplePattern);
 		sparql += superClassPattern;
 	}
 	
@@ -520,14 +527,17 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 
 	@Override
 	public void visit(OWLInverseObjectPropertiesAxiom axiom) {
+		axiom.asSubObjectPropertyOfAxioms().forEach(ax -> ax.accept(this));
 	}
 	
 	@Override
 	public void visit(SWRLRule rule) {
+		LOGGER.warn("Ignoring axiom {} . Reason: SWRL rules not supported.", rule);
 	}
 	
 	@Override
 	public void visit(OWLHasKeyAxiom axiom) {
+		LOGGER.warn("Ignoring axiom {} . Reason: HasKey axiom not supported.", axiom);
 	}
 	
 	private String render(OWLObjectPropertyExpression propertyExpression){
@@ -546,34 +556,42 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 	
 	@Override
 	public void visit(OWLNegativeDataPropertyAssertionAxiom axiom) {
+		aBoxAxiomsNotSupportedWarning(axiom);
 	}
 
 	@Override
 	public void visit(OWLDifferentIndividualsAxiom axiom) {
+		aBoxAxiomsNotSupportedWarning(axiom);
 	}
 
 	@Override
 	public void visit(OWLObjectPropertyAssertionAxiom axiom) {
+		aBoxAxiomsNotSupportedWarning(axiom);
 	}
 	
 	@Override
 	public void visit(OWLClassAssertionAxiom axiom) {
+		aBoxAxiomsNotSupportedWarning(axiom);
 	}
 
 	@Override
 	public void visit(OWLDataPropertyAssertionAxiom axiom) {
+		aBoxAxiomsNotSupportedWarning(axiom);
 	}
 	
 	@Override
 	public void visit(OWLNegativeObjectPropertyAssertionAxiom axiom) {
+		aBoxAxiomsNotSupportedWarning(axiom);
 	}
 	
 	@Override
 	public void visit(OWLSameIndividualAxiom axiom) {
+		aBoxAxiomsNotSupportedWarning(axiom);
 	}
 
 	@Override
 	public void visit(OWLDatatypeDefinitionAxiom axiom) {
+		aBoxAxiomsNotSupportedWarning(axiom);
 	}
 	
 	///////////////////////////////////////////////////////////////////////////
@@ -584,21 +602,34 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 
 	@Override
 	public void visit(OWLAnnotationAssertionAxiom axiom) {
+		annotationAxiomsNotSupportedWarning(axiom);
 	}
 
 	@Override
 	public void visit(OWLSubAnnotationPropertyOfAxiom axiom) {
+		annotationAxiomsNotSupportedWarning(axiom);
 	}
 
 	@Override
 	public void visit(OWLAnnotationPropertyDomainAxiom axiom) {
+		annotationAxiomsNotSupportedWarning(axiom);
 	}
 
 	@Override
 	public void visit(OWLAnnotationPropertyRangeAxiom axiom) {
+		annotationAxiomsNotSupportedWarning(axiom);
 	}
 
 	@Override
 	public void visit(OWLDeclarationAxiom axiom) {
+		annotationAxiomsNotSupportedWarning(axiom);
+	}
+
+	private void aBoxAxiomsNotSupportedWarning(OWLAxiom axiom) {
+		LOGGER.warn("Ignoring axiom {} . Reason: ABox axioms are not supported.", axiom);
+	}
+
+	private void annotationAxiomsNotSupportedWarning(OWLAxiom axiom) {
+		LOGGER.warn("Ignoring axiom {} . Reason: Annotation axioms are not supported.", axiom);
 	}
 }

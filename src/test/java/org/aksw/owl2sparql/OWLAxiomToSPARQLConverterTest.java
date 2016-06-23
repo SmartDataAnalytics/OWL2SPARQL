@@ -43,8 +43,8 @@ public class OWLAxiomToSPARQLConverterTest {
 	
 	OWLOntologyManager man = OWLManager.createOWLOntologyManager();
 	OWLDataFactory df = man.getOWLDataFactory();
-	PrefixManager pm = new DefaultPrefixManager("http://foo.bar/");
-	
+	PrefixManager pm = new DefaultPrefixManager();
+
 	OWLClass clsA = df.getOWLClass("A", pm);
 	OWLClass clsB = df.getOWLClass("B", pm);
 	OWLClass clsC = df.getOWLClass("C", pm);
@@ -62,6 +62,11 @@ public class OWLAxiomToSPARQLConverterTest {
 	OWLIndividual  indB = df.getOWLNamedIndividual("b", pm);
 	
 	String rootVariable = "?s";
+
+	public OWLAxiomToSPARQLConverterTest() {
+		pm.setDefaultPrefix("http://foo.bar/");
+	}
+
 
 	/**
 	 * @throws java.lang.Exception
@@ -369,6 +374,22 @@ public class OWLAxiomToSPARQLConverterTest {
 				"	  }");
 		Query query = converter.asQuery(axiom);
 		
+		assertTrue("Conversion of axiom " + axiom + " failed.\n" + query + " does not match " + targetQuery, query.equals(targetQuery));
+	}
+
+	@Test
+	public void testInversePropertiesAxiom() {
+		OWLAxiom axiom = df.getOWLInverseObjectPropertiesAxiom(propR, propS);
+
+		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" +
+														"WHERE\n" +
+														"  { ?s <http://foo.bar/r> ?o .\n" +
+														"    ?o <http://foo.bar/s> ?s .\n" +
+														"    ?s <http://foo.bar/s> ?o .\n" +
+														"    ?o <http://foo.bar/r> ?s\n" +
+														"  }");
+		Query query = converter.asQuery(axiom);
+
 		assertTrue("Conversion of axiom " + axiom + " failed.\n" + query + " does not match " + targetQuery, query.equals(targetQuery));
 	}
 

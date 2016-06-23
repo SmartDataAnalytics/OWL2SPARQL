@@ -39,9 +39,6 @@ import org.semanticweb.owlapi.dlsyntax.renderer.DLSyntaxObjectRenderer;
 import org.semanticweb.owlapi.io.ToStringRenderer;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.util.DefaultPrefixManager;
-import org.semanticweb.owlapi.util.OWLClassExpressionVisitorExAdapter;
-import org.semanticweb.owlapi.util.OWLObjectVisitorExAdapter;
-import org.semanticweb.owlapi.util.OWLObjectWalker;
 import org.semanticweb.owlapi.vocab.OWLFacet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +47,8 @@ import uk.ac.manchester.cs.owl.owlapi.OWLDataFactoryImpl;
 import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.semanticweb.owlapi.model.ClassExpressionType.OBJECT_MAX_CARDINALITY;
 
 /**
  * A converter from
@@ -636,126 +635,77 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 
 	@Override
 	public void visit(OWLObjectMinCardinality ce) {
-		String subjectVariable = variables.peek();
-		String objectVariable = mapping.newIndividualVariable();
-		OWLObjectPropertyExpression propertyExpression = ce.getProperty();
-		int cardinality = ce.getCardinality();
-		
-		if(inIntersection() || modalDepth() > 1){
-			sparql += "{SELECT " + subjectVariable + " WHERE {";
-		}
-		
-		if(propertyExpression.isAnonymous()){
-			//property expression is inverse of a property
-			sparql += asTriplePattern(objectVariable, propertyExpression.getNamedProperty(), subjectVariable);
-		} else {
-			sparql += asTriplePattern(subjectVariable, propertyExpression.getNamedProperty(), objectVariable);
-		}
-		
-		OWLClassExpression filler = ce.getFiller();
-		if(filler.isAnonymous()){
-			String var = mapping.newIndividualVariable();
-			variables.push(var);
-			sparql += typeTriplePattern(objectVariable, var);
-			filler.accept(this);
-			variables.pop();
-		} else {
-			sparql += typeTriplePattern(objectVariable, render(filler.asOWLClass()));
-		}
-		
-		String grouping = " GROUP BY " + subjectVariable + " HAVING(COUNT(" + objectVariable + ")>=" + cardinality + ")";
-		if(inIntersection() || modalDepth() > 1){
-			sparql += "}" + grouping + "}";
-		} else {
-			appendix += grouping;
-		}
-		
+		processObjectCardinalityRestriction(ce, ">=");
 	}
 
 	@Override
 	public void visit(OWLObjectExactCardinality ce) {
-		String subjectVariable = variables.peek();
-		String objectVariable = mapping.newIndividualVariable();
-		OWLObjectPropertyExpression propertyExpression = ce.getProperty();
-		int cardinality = ce.getCardinality();
-		sparql += "{SELECT " + subjectVariable + " WHERE {";
-		if(propertyExpression.isAnonymous()){
-			//property expression is inverse of a property
-			sparql += asTriplePattern(objectVariable, propertyExpression.getNamedProperty(), subjectVariable);
-		} else {
-			sparql += asTriplePattern(subjectVariable, propertyExpression.getNamedProperty(), objectVariable);
-		}
-		OWLClassExpression filler = ce.getFiller();
-		if(filler.isAnonymous()){
-			String var = mapping.newIndividualVariable();
-			variables.push(var);
-			sparql += typeTriplePattern(objectVariable, var);
-			filler.accept(this);
-			variables.pop();
-		} else {
-			sparql += typeTriplePattern(objectVariable, render(filler.asOWLClass()));
-		}
-		
-		sparql += "} GROUP BY " + subjectVariable + " HAVING(COUNT(" + objectVariable + ")=" + cardinality + ")}";
+		processObjectCardinalityRestriction(ce, "=");
 	}
 
 	@Override
 	public void visit(OWLObjectMaxCardinality ce) {
+		processObjectCardinalityRestriction(ce, "<=");
+	}
+
+	private void processObjectCardinalityRestriction(OWLObjectCardinalityRestriction ce, String operator) {
 		String subjectVariable = variables.peek();
 		String objectVariable = mapping.newIndividualVariable();
-		OWLObjectPropertyExpression propertyExpression = ce.getProperty();
+
 		int cardinality = ce.getCardinality();
-		
+
 		boolean maxOneCardinalityAsFilterNotExists = true;
-		if(cardinality == 1 && maxOneCardinalityAsFilterNotExists ){
-			
-		} else {
-			sparql += "{SELECT " + subjectVariable + " WHERE {";
-		}
-		
-		if(propertyExpression.isAnonymous()){
-			//property expression is inverse of a property
-			sparql += asTriplePattern(objectVariable, propertyExpression.getNamedProperty(), subjectVariable);
-		} else {
-			sparql += asTriplePattern(subjectVariable, propertyExpression.getNamedProperty(), objectVariable);
-		}
-		
-		// convert the filler
-		OWLClassExpression filler = ce.getFiller();
-		variables.push(objectVariable);
-		filler.accept(this);
-		variables.pop();
-//		if(filler.isAnonymous()){
-//			String var = mapping.newIndividualVariable();
-//			variables.push(var);
-//			sparql += triple(objectVariable, "a", var);
-//			filler.accept(this);
-//			variables.pop();
-//		} else {
-//			sparql += triple(objectVariable, "a", filler.asOWLClass());
-//		}
-		if(cardinality == 1 && maxOneCardinalityAsFilterNotExists ){
+		boolean useMaxCardOptimization = ce.getClassExpressionType() ==  OBJECT_MAX_CARDINALITY && cardinality == 1 && maxOneCardinalityAsFilterNotExists;
+
+		if(useMaxCardOptimization){
+			// process the restriction once with the filler variable ?o1
+			processPropertyRestriction(ce, subjectVariable, objectVariable);
+
 			sparql += "FILTER NOT EXISTS {";
-			
-			// we need a second object variable
+
+			// we need a second filler variable ?o2
 			String objectVariable2 = mapping.newIndividualVariable();
-			
-			if(propertyExpression.isAnonymous()){
-				//property expression is inverse of a property
-				sparql += asTriplePattern(objectVariable2, propertyExpression.getNamedProperty(), subjectVariable);
-			} else {
-				sparql += asTriplePattern(subjectVariable, propertyExpression.getNamedProperty(), objectVariable2);
-			}
-			
-			variables.push(objectVariable2);
-			filler.accept(this);
-			variables.pop();
+
+			// process the restriction again with the new filler variable
+			processPropertyRestriction(ce, subjectVariable, objectVariable2);
+
+			// add FILTER(?o1 != ?o2)
 			sparql += filter(equalExpressions(objectVariable, objectVariable2, true));
 			sparql += "}";
 		} else {
-			sparql += "} GROUP BY " + subjectVariable + " HAVING(COUNT(" + objectVariable + ")<=" + cardinality + ")}";
+			if(!useMaxCardOptimization && (inIntersection() || modalDepth() > 1)){
+				sparql += "{SELECT " + subjectVariable + " WHERE {";
+			}
+
+			processPropertyRestriction(ce, subjectVariable, objectVariable);
+
+			String grouping = " GROUP BY " + subjectVariable + " HAVING(COUNT(" + objectVariable + ")" + operator + cardinality + ")";
+			if(inIntersection() || modalDepth() > 1){
+				sparql += "}" + grouping + "}";
+			} else {
+				appendix += grouping;
+			}
 		}
-		
+	}
+
+	private void processPropertyRestrictionFiller(String objectVariable, OWLClassExpression filler) {
+		variables.push(objectVariable);
+		filler.accept(this);
+		variables.pop();
+	}
+
+	private <R extends OWLObjectRestriction & OWLQuantifiedRestriction<OWLClassExpression>> void processPropertyRestriction(
+			R ce, String subjectVariable, String objectVariable) {
+		OWLObjectPropertyExpression pe = ce.getProperty();
+
+		if (pe.isAnonymous()) {// property expression is inverse of a property
+			sparql += asTriplePattern(objectVariable, pe.getNamedProperty(), subjectVariable);
+		} else {
+			sparql += asTriplePattern(subjectVariable, pe.getNamedProperty(), objectVariable);
+		}
+
+		// process the filler
+		processPropertyRestrictionFiller(objectVariable, ce.getFiller());
 	}
 
 	@Override
@@ -1284,6 +1234,10 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 		System.out.println(expr + "\n" + query);
 
 		expr = df.getOWLObjectAllValuesFrom(propR, clsA);
+		query = converter.asQuery(expr, rootVar).toString();
+		System.out.println(expr + "\n" + query);
+
+		expr = df.getOWLObjectExactCardinality(2, propR, clsA);
 		query = converter.asQuery(expr, rootVar).toString();
 		System.out.println(expr + "\n" + query);
 	}

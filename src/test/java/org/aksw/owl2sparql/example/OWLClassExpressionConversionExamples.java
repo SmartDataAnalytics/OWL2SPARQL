@@ -54,7 +54,8 @@ public class OWLClassExpressionConversionExamples {
 		String NS = "http://example.org/ontology/";
 		OWLOntologyManager man = OWLManager.createOWLOntologyManager();
 		OWLDataFactory df = man.getOWLDataFactory();
-		PrefixManager pm = new DefaultPrefixManager(NS);
+		PrefixManager pm = new DefaultPrefixManager();
+		pm.setDefaultPrefix(NS);
 		OWLClassExpressionMinimizer minimizer = new OWLClassExpressionMinimizer(df);
 
 		OWLClass clsA = df.getOWLClass("A", pm);

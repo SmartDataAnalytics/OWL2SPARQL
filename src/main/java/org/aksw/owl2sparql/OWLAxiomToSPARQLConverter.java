@@ -252,7 +252,11 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 		}
 		
 		OWLClassExpression superClass = axiom.getSuperClass();
-		String superClassPattern = expressionConverter.asGroupGraphPattern(superClass, subjectVar, subClass.isOWLThing() && superClass.getClassExpressionType() == ClassExpressionType.OBJECT_COMPLEMENT_OF);
+		String superClassPattern = expressionConverter.asGroupGraphPattern(superClass, subjectVar,
+																		   subClass.isOWLThing() &&
+																				   (superClass.getClassExpressionType() == ClassExpressionType.OBJECT_COMPLEMENT_OF ||
+																					superClass.getClassExpressionType() == ClassExpressionType.DATA_ALL_VALUES_FROM ||
+																					superClass.getClassExpressionType() == ClassExpressionType.OBJECT_ALL_VALUES_FROM));
 		sparql += superClassPattern;
 	}
 	

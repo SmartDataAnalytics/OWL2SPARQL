@@ -84,8 +84,8 @@ public class OWLAxiomToSPARQLConverterTest {
 		
 		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" + 
 				"WHERE\n" + 
-				"  { ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/A> .\n" + 
-				"    ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/B>\n" + 
+				"  { ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <A> .\n" + 
+				"    ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <B>\n" + 
 				"  }");
 		Query query = converter.asQuery(axiom);
 		
@@ -98,9 +98,9 @@ public class OWLAxiomToSPARQLConverterTest {
 		
 		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" + 
 				"WHERE\n" + 
-				"  { ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/A> .\n" + 
-				"    ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/B> .\n" + 
-				"    ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/C> \n" + 
+				"  { ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <A> .\n" + 
+				"    ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <B> .\n" + 
+				"    ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <C> \n" + 
 				"  }");
 		Query query = converter.asQuery(axiom);
 		
@@ -113,19 +113,19 @@ public class OWLAxiomToSPARQLConverterTest {
 		
 		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" + 
 				"WHERE\n" + 
-				"  {   { ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/A>\n" + 
-				"        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/B> }\n" + 
-				"        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/C> }\n" + 
+				"  {   { ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <A>\n" + 
+				"        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <B> }\n" + 
+				"        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <C> }\n" + 
 				"      }\n" + 
 				"    UNION\n" + 
-				"      { ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/B>\n" + 
-				"        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/A> }\n" + 
-				"        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/C> }\n" + 
+				"      { ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <B>\n" + 
+				"        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <A> }\n" + 
+				"        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <C> }\n" + 
 				"      }\n" + 
 				"    UNION\n" + 
-				"      { ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/C>\n" + 
-				"        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/A> }\n" + 
-				"        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/B> }\n" + 
+				"      { ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <C>\n" + 
+				"        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <A> }\n" + 
+				"        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <B> }\n" + 
 				"      }\n" + 
 				"  }");
 		Query query = converter.asQuery(axiom);
@@ -139,20 +139,20 @@ public class OWLAxiomToSPARQLConverterTest {
 		
 		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" + 
 				"			WHERE\n" + 
-				"			  { ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/A>\n" + 
-				"			      { ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/B>\n" + 
-				"			        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/C> }\n" + 
-				"			        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/D> }\n" + 
+				"			  { ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <A>\n" + 
+				"			      { ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <B>\n" + 
+				"			        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <C> }\n" + 
+				"			        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <D> }\n" + 
 				"			      }\n" + 
 				"			    UNION\n" + 
-				"			      { ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/C>\n" + 
-				"			        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/B> }\n" + 
-				"			        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/D> }\n" + 
+				"			      { ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <C>\n" + 
+				"			        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <B> }\n" + 
+				"			        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <D> }\n" + 
 				"			      }\n" + 
 				"			    UNION\n" + 
-				"			      { ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/D>\n" + 
-				"			        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/B> }\n" + 
-				"			        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/C> }\n" + 
+				"			      { ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <D>\n" + 
+				"			        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <B> }\n" + 
+				"			        FILTER NOT EXISTS {?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <C> }\n" + 
 				"			      }\n" + 
 				"			  }");
 		Query query = converter.asQuery(axiom);
@@ -166,8 +166,8 @@ public class OWLAxiomToSPARQLConverterTest {
 		
 		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" + 
 				"			WHERE\n" + 
-				"			  { ?s <http://foo.bar/r> ?o .\n" + 
-				"			    ?s <http://foo.bar/s> ?o\n" + 
+				"			  { ?s <r> ?o .\n" + 
+				"			    ?s <s> ?o\n" + 
 				"			  }");
 		Query query = converter.asQuery(axiom);
 		
@@ -180,9 +180,9 @@ public class OWLAxiomToSPARQLConverterTest {
 		
 		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" + 
 				"			WHERE\n" + 
-				"			  { ?s <http://foo.bar/r> ?o .\n" + 
-				"			    ?s <http://foo.bar/s> ?o .\n" + 
-				"			    ?s <http://foo.bar/t> ?o\n" + 
+				"			  { ?s <r> ?o .\n" + 
+				"			    ?s <s> ?o .\n" + 
+				"			    ?s <t> ?o\n" + 
 				"			  }");
 		Query query = converter.asQuery(axiom);
 		
@@ -195,19 +195,19 @@ public class OWLAxiomToSPARQLConverterTest {
 		
 		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" + 
 				"WHERE\n" + 
-				"  {   { ?s <http://foo.bar/r> ?o\n" + 
-				"        FILTER NOT EXISTS {?s <http://foo.bar/s> ?o }\n" + 
-				"        FILTER NOT EXISTS {?s <http://foo.bar/t> ?o }\n" + 
+				"  {   { ?s <r> ?o\n" + 
+				"        FILTER NOT EXISTS {?s <s> ?o }\n" + 
+				"        FILTER NOT EXISTS {?s <t> ?o }\n" + 
 				"      }\n" + 
 				"    UNION\n" + 
-				"      { ?s <http://foo.bar/s> ?o\n" + 
-				"        FILTER NOT EXISTS {?s <http://foo.bar/r> ?o }\n" + 
-				"        FILTER NOT EXISTS {?s <http://foo.bar/t> ?o }\n" + 
+				"      { ?s <s> ?o\n" + 
+				"        FILTER NOT EXISTS {?s <r> ?o }\n" + 
+				"        FILTER NOT EXISTS {?s <t> ?o }\n" + 
 				"      }\n" + 
 				"    UNION\n" + 
-				"      { ?s <http://foo.bar/t> ?o\n" + 
-				"        FILTER NOT EXISTS {?s <http://foo.bar/r> ?o }\n" + 
-				"        FILTER NOT EXISTS {?s <http://foo.bar/s> ?o }\n" + 
+				"      { ?s <t> ?o\n" + 
+				"        FILTER NOT EXISTS {?s <r> ?o }\n" + 
+				"        FILTER NOT EXISTS {?s <s> ?o }\n" + 
 				"      }\n" + 
 				"  }");
 		Query query = converter.asQuery(axiom);
@@ -221,8 +221,8 @@ public class OWLAxiomToSPARQLConverterTest {
 		
 		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" + 
 				"			WHERE\n" + 
-				"			  { ?s <http://foo.bar/r> ?s0 .\n" + 
-				"			    ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/A>\n" + 
+				"			  { ?s <r> ?s0 .\n" + 
+				"			    ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <A>\n" + 
 				"			  }");
 		Query query = converter.asQuery(axiom);
 		
@@ -236,8 +236,8 @@ public class OWLAxiomToSPARQLConverterTest {
 		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" + 
 				"	WHERE\n" + 
 				"	  { ?s ?p ?o\n" +
-				"	    FILTER NOT EXISTS {?s <http://foo.bar/r> ?s1\n" + 
-				"	      FILTER NOT EXISTS {?s1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://foo.bar/A> }\n" + 
+				"	    FILTER NOT EXISTS {?s <r> ?s1\n" + 
+				"	      FILTER NOT EXISTS {?s1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <A> }\n" + 
 				"	    }\n" + 
 				"	  }");
 		Query query = converter.asQuery(axiom);
@@ -251,7 +251,7 @@ public class OWLAxiomToSPARQLConverterTest {
 		
 		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" + 
 				"			WHERE\n" + 
-				"			  { ?s <http://foo.bar/dpT> ?o\n" + 
+				"			  { ?s <dpT> ?o\n" + 
 				"			    FILTER ( datatype(?o) = <http://www.w3.org/2001/XMLSchema#boolean> )\n" + 
 				"			  }");
 		Query query = converter.asQuery(axiom);
@@ -265,8 +265,8 @@ public class OWLAxiomToSPARQLConverterTest {
 		
 		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" + 
 				"			WHERE\n" + 
-				"			  { ?s <http://foo.bar/r> ?o\n" + 
-				"			    FILTER NOT EXISTS {?o <http://foo.bar/r> ?s }\n" + 
+				"			  { ?s <r> ?o\n" + 
+				"			    FILTER NOT EXISTS {?o <r> ?s }\n" + 
 				"			  }");
 		Query query = converter.asQuery(axiom);
 		
@@ -279,8 +279,8 @@ public class OWLAxiomToSPARQLConverterTest {
 		
 		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" + 
 				"			WHERE\n" + 
-				"			  { ?s <http://foo.bar/r> ?o .\n" + 
-				"			    ?o <http://foo.bar/r> ?s \n" + 
+				"			  { ?s <r> ?o .\n" + 
+				"			    ?o <r> ?s \n" + 
 				"			  }");
 		Query query = converter.asQuery(axiom);
 		
@@ -293,7 +293,7 @@ public class OWLAxiomToSPARQLConverterTest {
 		
 		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" + 
 				"			WHERE\n" + 
-				"			  { ?s <http://foo.bar/r> ?s\n" + 
+				"			  { ?s <r> ?s\n" + 
 				"			  }");
 		Query query = converter.asQuery(axiom);
 		
@@ -307,7 +307,7 @@ public class OWLAxiomToSPARQLConverterTest {
 		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" + 
 				"			WHERE\n" + 
 				"			  { ?s ?p ?o\n" + 
-				"			    FILTER NOT EXISTS {?s <http://foo.bar/r> ?s }\n" + 
+				"			    FILTER NOT EXISTS {?s <r> ?s }\n" + 
 				"			  }");
 		Query query = converter.asQuery(axiom);
 		
@@ -320,8 +320,8 @@ public class OWLAxiomToSPARQLConverterTest {
 		
 		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" + 
 				"	WHERE\n" + 
-				"	  { ?s <http://foo.bar/r> ?s0\n" + 
-				"	    FILTER NOT EXISTS {?s <http://foo.bar/r> ?s1\n" + 
+				"	  { ?s <r> ?s0\n" + 
+				"	    FILTER NOT EXISTS {?s <r> ?s1\n" + 
 				"	      FILTER ( ! sameTerm(?s0, ?s1) )\n" + 
 				"	    }\n" + 
 				"	  }");
@@ -336,8 +336,8 @@ public class OWLAxiomToSPARQLConverterTest {
 		
 		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" + 
 				"	WHERE\n" + 
-				"	  { ?s0 <http://foo.bar/r> ?s\n" + 
-				"	    FILTER NOT EXISTS {?s1 <http://foo.bar/r> ?s\n" + 
+				"	  { ?s0 <r> ?s\n" + 
+				"	    FILTER NOT EXISTS {?s1 <r> ?s\n" + 
 				"	      FILTER ( ! sameTerm(?s0, ?s1) )\n" + 
 				"	    }\n" + 
 				"	  }");
@@ -352,9 +352,9 @@ public class OWLAxiomToSPARQLConverterTest {
 		
 		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" + 
 				"	WHERE\n" + 
-				"	  { ?s <http://foo.bar/r> ?o1 .\n" + 
-				"	    ?o1 <http://foo.bar/r> ?o .\n" + 
-				"	    ?s <http://foo.bar/r> ?o\n" + 
+				"	  { ?s <r> ?o1 .\n" + 
+				"	    ?o1 <r> ?o .\n" + 
+				"	    ?s <r> ?o\n" + 
 				"	  }");
 		Query query = converter.asQuery(axiom);
 		
@@ -367,10 +367,10 @@ public class OWLAxiomToSPARQLConverterTest {
 		
 		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s \n" + 
 				"	WHERE\n" + 
-				"	  { ?s <http://foo.bar/r> ?s0 .\n" + 
-				"	    ?s0 <http://foo.bar/s> ?s1 .\n" + 
-				"	    ?s1 <http://foo.bar/t> ?o .\n" + 
-				"	    ?s <http://foo.bar/t> ?o\n" + 
+				"	  { ?s <r> ?s0 .\n" + 
+				"	    ?s0 <s> ?s1 .\n" + 
+				"	    ?s1 <t> ?o .\n" + 
+				"	    ?s <t> ?o\n" + 
 				"	  }");
 		Query query = converter.asQuery(axiom);
 		
@@ -383,10 +383,10 @@ public class OWLAxiomToSPARQLConverterTest {
 
 		Query targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" +
 														"WHERE\n" +
-														"  { ?s <http://foo.bar/r> ?o .\n" +
-														"    ?o <http://foo.bar/s> ?s .\n" +
-														"    ?s <http://foo.bar/s> ?o .\n" +
-														"    ?o <http://foo.bar/r> ?s\n" +
+														"  { ?s <r> ?o .\n" +
+														"    ?o <s> ?s .\n" +
+														"    ?s <s> ?o .\n" +
+														"    ?o <r> ?s\n" +
 														"  }");
 		Query query = converter.asQuery(axiom);
 

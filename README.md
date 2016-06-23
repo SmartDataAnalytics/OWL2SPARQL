@@ -5,6 +5,7 @@
   <img alt="Coverity Scan Build Status"
        src="https://scan.coverity.com/projects/9256/badge.svg"/>
 </a>
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/9b16e876e6784a80b6d6a15b70df2ab2)](https://www.codacy.com/app/conpcomplete/OWL2SPARQL?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=AKSW/OWL2SPARQL&amp;utm_campaign=Badge_Grade)
 This project provides a simple converter from OWL axioms and OWL class expressions to SPARQL queries.
 
 ## Maven Settings

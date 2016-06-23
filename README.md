@@ -102,9 +102,9 @@ WHERE
 The source code of this repo is published under the [Apache License Version 2.0](https://github.com/AKSW/owl2sparql/blob/master/LICENSE).
 
 This project makes use of several dependencies: When in doubt, please cross-check with the respective projects:
+* [OWL API](https://github.com/owlcs/owlapi) (Apache License 2.0 and GNU LGPL Version 3.0)
 * [Apache Jena](https://jena.apache.org/) (Apache License 2.0)
 * [Guava](http://code.google.com/p/guava-libraries/) (Apache License 2.0)
-* 
 
 ## More Examples
 <table >

@@ -44,7 +44,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.manchester.cs.owl.owlapi.OWLDataFactoryImpl;
 
-import javax.annotation.Nonnull;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -58,7 +57,7 @@ import static org.semanticweb.owlapi.model.ClassExpressionType.OBJECT_MAX_CARDIN
  * @author Lorenz Buehmann
  *
  */
-public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVisitor, OWLPropertyExpressionVisitor, OWLDataRangeVisitor{
+public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVisitor, OWLDataRangeVisitor{
 	
 	private static final Logger logger = LoggerFactory.getLogger(OWLClassExpressionToSPARQLConverter.class);
 	
@@ -212,19 +211,17 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 		
 		queryString += triplePattern;
 		queryString += "}";
-		
-		if(!variableEntities.isEmpty()){
-			if(countQuery){
-				queryString += "GROUP BY ";
-				for (OWLEntity owlEntity : variableEntities) {
-					String var = mapping.get(owlEntity);
-					queryString += var;
-				}
-				queryString += " ORDER BY DESC(?cnt)";
+
+		if (countQuery && !variableEntities.isEmpty()) {
+			queryString += "GROUP BY ";
+			for (OWLEntity owlEntity : variableEntities) {
+				String var = mapping.get(owlEntity);
+				queryString += var;
 			}
+			queryString += " ORDER BY DESC(?cnt)";
 		}
 		queryString += appendix;
-		System.out.println(queryString);
+		logger.debug("Query: {}", queryString);
 		return QueryFactory.create(queryString, Syntax.syntaxSPARQL_11);
 	}
 	
@@ -445,22 +442,6 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	
 	private String render(OWLLiteral literal){
 		return "\"" + literal + "\"^^<" + literal.getDatatype().toStringID() + ">";
-	}
-
-	@Override
-	public void visit(OWLObjectProperty property) {
-	}
-
-	@Override
-	public void visit(OWLObjectInverseOf property) {
-	}
-
-	@Override
-	public void visit(OWLDataProperty property) {
-	}
-
-	@Override
-	public void visit(@Nonnull OWLAnnotationProperty property) {
 	}
 
 	@Override

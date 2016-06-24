@@ -125,7 +125,7 @@ public class OWLClassExpressionMinimizer implements OWLClassExpressionVisitorEx<
 	 * @return whether {@code subclass} is a subclass of {@code superclass}
 	 */
 	private boolean isSubClassOf(OWLClassExpression subClass, OWLClassExpression superClass) {
-		return superClass.isOWLThing();
+		return subClass.isOWLNothing() || superClass.isOWLThing();
 	}
 
 	/* (non-Javadoc)
@@ -197,7 +197,7 @@ public class OWLClassExpressionMinimizer implements OWLClassExpressionVisitorEx<
 		OWLClassExpression shortenedFiller = filler.accept(this);
 		if(shortenedFiller.isOWLNothing()){// \exists r.\bottom \equiv \bottom
 			return df.getOWLNothing();
-		} else if(filler != shortenedFiller){
+		} else if(!filler.equals(shortenedFiller)){
 			return df.getOWLObjectSomeValuesFrom(ce.getProperty(), shortenedFiller);
 		}
 
@@ -214,13 +214,13 @@ public class OWLClassExpressionMinimizer implements OWLClassExpressionVisitorEx<
 	@Override
 	public OWLClassExpression visit(OWLObjectAllValuesFrom ce) {
 		OWLClassExpression filler = ce.getFiller();
-		OWLClassExpression shortendedFiller = filler.accept(this);
-		if(shortendedFiller.isOWLThing()){// \forall r.\top \equiv \top
+		OWLClassExpression shortenedFiller = filler.accept(this);
+		if(shortenedFiller.isOWLThing()){// \forall r.\top \equiv \top
 			return df.getOWLThing();
-		} else if(beautify && shortendedFiller.isOWLNothing()) {// \forall r.\bot to \neg \exists r.\top
+		} else if(beautify && shortenedFiller.isOWLNothing()) {// \forall r.\bot to \neg \exists r.\top
 			return df.getOWLObjectComplementOf(df.getOWLObjectSomeValuesFrom(ce.getProperty(), df.getOWLThing()));
-		} else if(filler != shortendedFiller){
-			return df.getOWLObjectAllValuesFrom(ce.getProperty(), shortendedFiller);
+		} else if(!filler.equals(shortenedFiller)){
+			return df.getOWLObjectAllValuesFrom(ce.getProperty(), shortenedFiller);
 		}
 		return ce;
 	}
@@ -244,11 +244,11 @@ public class OWLClassExpressionMinimizer implements OWLClassExpressionVisitorEx<
 			return df.getOWLThing();
 		}
 		OWLClassExpression filler = ce.getFiller();
-		OWLClassExpression shortendedFiller = filler.accept(this);
-		if(shortendedFiller.isOWLNothing()){// >= n r.\bot \equiv \bot if n != 0
+		OWLClassExpression shortenedFiller = filler.accept(this);
+		if(shortenedFiller.isOWLNothing()){// >= n r.\bot \equiv \bot if n != 0
 			return df.getOWLNothing();
-		} else if(filler != shortendedFiller){
-			return df.getOWLObjectMinCardinality(ce.getCardinality(), ce.getProperty(), shortendedFiller);
+		} else if(!filler.equals(shortenedFiller)){
+			return df.getOWLObjectMinCardinality(ce.getCardinality(), ce.getProperty(), shortenedFiller);
 		}
 		return ce;
 	}
@@ -259,9 +259,9 @@ public class OWLClassExpressionMinimizer implements OWLClassExpressionVisitorEx<
 	@Override
 	public OWLClassExpression visit(OWLObjectExactCardinality ce) {
 		OWLClassExpression filler = ce.getFiller();
-		OWLClassExpression shortendedFiller = filler.accept(this);
-		if(filler != shortendedFiller){
-			return df.getOWLObjectExactCardinality(ce.getCardinality(), ce.getProperty(), shortendedFiller);
+		OWLClassExpression shortenedFiller = filler.accept(this);
+		if(!filler.equals(shortenedFiller)){
+			return df.getOWLObjectExactCardinality(ce.getCardinality(), ce.getProperty(), shortenedFiller);
 		}
 		return ce;
 	}
@@ -272,13 +272,13 @@ public class OWLClassExpressionMinimizer implements OWLClassExpressionVisitorEx<
 	@Override
 	public OWLClassExpression visit(OWLObjectMaxCardinality ce) {
 		OWLClassExpression filler = ce.getFiller();
-		OWLClassExpression shortendedFiller = filler.accept(this);
-		if(shortendedFiller.isOWLNothing()){// <= n r.\bot \equiv \top
+		OWLClassExpression shortenedFiller = filler.accept(this);
+		if(shortenedFiller.isOWLNothing()){// <= n r.\bot \equiv \top
 			return df.getOWLThing();
 		} else if(beautify && ce.getCardinality() == 0) {// we rewrite <= 0 r C to \neg \exists r C - easier to read for humans
-			return df.getOWLObjectComplementOf(df.getOWLObjectSomeValuesFrom(ce.getProperty(), shortendedFiller));
-		} else if(filler != shortendedFiller){
-			return df.getOWLObjectMaxCardinality(ce.getCardinality(), ce.getProperty(), shortendedFiller);
+			return df.getOWLObjectComplementOf(df.getOWLObjectSomeValuesFrom(ce.getProperty(), shortenedFiller));
+		} else if(!filler.equals(shortenedFiller)){
+			return df.getOWLObjectMaxCardinality(ce.getCardinality(), ce.getProperty(), shortenedFiller);
 		}
 		return ce;
 	}

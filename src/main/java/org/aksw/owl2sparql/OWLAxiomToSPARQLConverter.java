@@ -225,17 +225,17 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 			String unionPattern = "";
 			if(classExpressions.size() > 1){
 				for (int i = 0; i < classExpressions.size() - 1; i++) {
-					unionPattern += "{" + expressionConverter.asGroupGraphPattern(classExpressions.get(i), subjectVar) + "}";
+					unionPattern += "{" + expressionConverter.asGroupGraphPattern(classExpressions.get(i), targetVar) + "}";
 					unionPattern += " UNION ";
 				}
-				unionPattern += "{" + expressionConverter.asGroupGraphPattern(classExpressions.get(classExpressions.size() - 1), subjectVar) + "}";
+				unionPattern += "{" + expressionConverter.asGroupGraphPattern(classExpressions.get(classExpressions.size() - 1), targetVar) + "}";
 			} else {
-				unionPattern = expressionConverter.asGroupGraphPattern(classExpressions.get(0), subjectVar);
+				unionPattern = expressionConverter.asGroupGraphPattern(classExpressions.get(0), targetVar);
 			}
 			pattern = notExists(unionPattern);
 		} else {
 			for (OWLClassExpression ce : classExpressions) {
-				pattern += notExists(expressionConverter.asGroupGraphPattern(ce, subjectVar));
+				pattern += notExists(expressionConverter.asGroupGraphPattern(ce, targetVar));
 			}
 		}
 		return pattern;

@@ -343,10 +343,6 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 		return appendix;
 	}
 	
-	private String notExists(String pattern){
-		return "FILTER NOT EXISTS {" + pattern + "}";
-	}
-	
 	private void reset(){
 		variables.clear();
 		properties.clear();
@@ -509,7 +505,8 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 //				modalDepth() == 1 &&
 				needOuterTriplePattern && (existentialFillers.isEmpty() || !existentialFillers.peek().equals(ce))) || inUnion()){
 			sparql += genericTriplePattern();
-		} 
+		}
+
 		sparql += "FILTER NOT EXISTS {";
 		ce.getOperand().accept(this);
 		sparql += "}";
@@ -878,8 +875,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	@Override
 	public void visit(OWLDatatypeRestriction node) {
 		String subject = variables.peek();
-		OWLDatatype datatype = node.getDatatype();
-		
+
 		for (Iterator<OWLFacetRestriction> iterator = node.getFacetRestrictions().iterator(); iterator.hasNext();) {
 			OWLFacetRestriction fr = iterator.next();
 			

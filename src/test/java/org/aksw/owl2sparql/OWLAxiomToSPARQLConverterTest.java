@@ -39,29 +39,30 @@ import static org.junit.Assert.assertTrue;
  */
 public class OWLAxiomToSPARQLConverterTest {
 	
-	OWLAxiomToSPARQLConverter converter = new OWLAxiomToSPARQLConverter("?s","?o");
-	
-	OWLOntologyManager man = OWLManager.createOWLOntologyManager();
-	OWLDataFactory df = man.getOWLDataFactory();
-	PrefixManager pm = new DefaultPrefixManager();
+	private OWLAxiomToSPARQLConverter converter = new OWLAxiomToSPARQLConverter("?s","?o");
 
-	OWLClass clsA = df.getOWLClass("A", pm);
-	OWLClass clsB = df.getOWLClass("B", pm);
-	OWLClass clsC = df.getOWLClass("C", pm);
-	OWLClass clsD = df.getOWLClass("D", pm);
-	
-	OWLObjectProperty propR = df.getOWLObjectProperty("r", pm);
-	OWLObjectProperty propS = df.getOWLObjectProperty("s", pm);
-	OWLObjectProperty propT = df.getOWLObjectProperty("t", pm);
-	
-	OWLDataProperty dpT = df.getOWLDataProperty("dpT", pm);
-	OWLDataRange booleanRange = df.getBooleanOWLDatatype();
-	OWLLiteral lit = df.getOWLLiteral(1);
-	
-	OWLIndividual indA = df.getOWLNamedIndividual("a", pm);
-	OWLIndividual  indB = df.getOWLNamedIndividual("b", pm);
-	
-	String rootVariable = "?s";
+	private OWLOntologyManager man = OWLManager.createOWLOntologyManager();
+	private OWLDataFactory df = man.getOWLDataFactory();
+	private PrefixManager pm = new DefaultPrefixManager();
+
+	private OWLClass clsA = df.getOWLClass("A", pm);
+	private OWLClass clsB = df.getOWLClass("B", pm);
+	private OWLClass clsC = df.getOWLClass("C", pm);
+	private OWLClass clsD = df.getOWLClass("D", pm);
+
+	private OWLObjectProperty propR = df.getOWLObjectProperty("r", pm);
+	private OWLObjectProperty propS = df.getOWLObjectProperty("s", pm);
+	private OWLObjectProperty propT = df.getOWLObjectProperty("t", pm);
+
+	private OWLDataProperty dpT = df.getOWLDataProperty("dpT", pm);
+	private OWLDataRange booleanRange = df.getBooleanOWLDatatype();
+	private OWLLiteral lit = df.getOWLLiteral(1);
+
+	private OWLIndividual indA = df.getOWLNamedIndividual("a", pm);
+	private OWLIndividual  indB = df.getOWLNamedIndividual("b", pm);
+
+	private OWLClassExpression ce1 = df.getOWLObjectOneOf(indA, indB);
+	private OWLClassExpression ce2 = df.getOWLDataHasValue(dpT, lit);
 
 	public OWLAxiomToSPARQLConverterTest() {
 		pm.setDefaultPrefix("http://foo.bar/");
@@ -90,6 +91,20 @@ public class OWLAxiomToSPARQLConverterTest {
 		Query query = converter.asQuery(axiom);
 		
 		assertTrue("Conversion of axiom " + axiom + " failed.\n" + query + " does not match " + targetQuery, query.equals(targetQuery));
+
+		subClass = ce1;
+		superClass = ce2;
+		axiom = df.getOWLSubClassOfAxiom(subClass, superClass);
+
+		targetQuery = QueryFactory.create("SELECT DISTINCT  ?s\n" +
+												  "WHERE\n" +
+												  "  { VALUES ?s { <a> <b> }\n" +
+												  "    ?s <dpT> 1\n" +
+												  "  }");
+		query = converter.asQuery(axiom);
+
+		assertTrue("Conversion of axiom " + axiom + " failed.\n" + query + " does not match " + targetQuery, query.equals(targetQuery));
+
 	}
 	
 	@Test

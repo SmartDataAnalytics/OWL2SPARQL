@@ -266,6 +266,23 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	}
 	
 	/**
+	 * Converts an OWL data range into a GroupGraphPattern.
+	 * @param dr the OWL data range
+	 * @param rootVariable the name of the projection variable
+	 * @return a SPARQL graph pattern
+	 */
+	public String asGroupGraphPattern(OWLDataRange dr, String rootVariable) 
+	{
+		reset();
+		variables.push(rootVariable);
+		
+		// convert
+		dr.accept(this);
+		
+		return sparql;
+	}
+
+	/**
 	 * Whether to return SPARQL queries with DISTINCT keyword.
 	 * @param useDistinct <code>true</code> if use DISTINCT, otherwise <code>false</code>
 	 */
@@ -437,7 +454,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	}
 	
 	private String render(OWLLiteral literal){
-		return "\"" + literal + "\"^^<" + literal.getDatatype().toStringID() + ">";
+		return "\"" + literal.getLiteral() + "\"^^<" + literal.getDatatype().toStringID() + ">";
 	}
 
 	@Override
@@ -881,7 +898,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 			
 			OWLFacet facet = fr.getFacet();
 			OWLLiteral value = fr.getFacetValue();
-			String valueString = render(value);
+			String valueString = value.getLiteral();
 			
 			switch(facet) {
 				case LENGTH: sparql += String.format("STRLEN(STR(%s) = %d)", subject, value.parseInteger());
@@ -915,6 +932,8 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 				sparql += " && ";
 			}
 		}
+		
+		sparql += " && datatype(" + subject + ")=<" + node.getDatatype().toStringID() + ">";
 	}
 	
 	public static void main(String[] args) throws Exception {

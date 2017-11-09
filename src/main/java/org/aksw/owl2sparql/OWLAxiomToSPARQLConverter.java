@@ -25,6 +25,7 @@ import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryFactory;
 import org.apache.jena.query.Syntax;
 import org.aksw.owl2sparql.util.VarGenerator;
+import org.apache.jena.sparql.util.NodeUtils;
 import org.semanticweb.owlapi.model.*;
 
 import java.util.LinkedList;
@@ -62,7 +63,19 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 	 * @return the SPARQL query
 	 */
 	public String convert(OWLAxiom axiom){
-		return convert(axiom, subjectVar, objectVar);
+		// we convert ABox axioms to SPARQL ASK queries and others to SELECT queries
+		if(AxiomType.ABoxAxiomTypes.contains(axiom.getAxiomType())) {
+			return convertABoxAxiom(axiom);
+		} else {
+			return convert(axiom, subjectVar, objectVar);
+		}
+	}
+
+	private String convertABoxAxiom(OWLAxiom axiom) {
+		sparql += "ASK {\n";
+		axiom.accept(this);
+		sparql += "}";
+		return sparql;
 	}
 	
 	/**
@@ -91,10 +104,16 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 	public String convert(OWLAxiom axiom, String targetSubjectVariable, String targetObjectVariable) {
 		this.subjectVar = targetSubjectVariable;
 		this.objectVar = targetObjectVariable;
-		
+
 		sparql = "";
 
-		String queryString = createSelectClause() + createWhereClause(axiom);
+		String queryString;
+		// we convert ABox axioms to SPARQL ASK queries and others to SELECT queries
+		if(AxiomType.ABoxAxiomTypes.contains(axiom.getAxiomType())) {
+			queryString = convertABoxAxiom(axiom);
+		} else {
+			queryString = createSelectClause() + createWhereClause(axiom);
+		}
 
 		return queryString;
 	}
@@ -136,7 +155,7 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 	public Query asQuery(OWLAxiom axiom, String targetSubjectVariable, String targetObjectVariable){
 		
 		String queryString = convert(axiom, targetSubjectVariable, targetObjectVariable);
-		
+
 		return QueryFactory.create(queryString, Syntax.syntaxARQ);
 	}
 	
@@ -481,8 +500,28 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 		if(propertyExpression.isAnonymous()){
 			return "^" + render(propertyExpression.getInverseProperty());
 		} else {
-			return "<" + propertyExpression.asOWLObjectProperty().toStringID() + ">";
+			return render((OWLEntity)propertyExpression.asOWLObjectProperty());
 		}
+	}
+
+	private String render(OWLDataPropertyExpression propertyExpression){
+		return render((OWLEntity)propertyExpression.asOWLDataProperty());
+	}
+
+	private String render(OWLIndividual ind){
+		if(ind.isAnonymous()){
+			return ind.toStringID();
+		} else {
+			return render((OWLEntity)ind.asOWLNamedIndividual());
+		}
+	}
+
+	private String render(OWLEntity entity){
+		return "<" + entity.toStringID() + ">";
+	}
+
+	private String render(OWLLiteral literal){
+		return "\"" + literal + "\"^^<" + literal.getDatatype().toStringID() + ">";
 	}
 	
 	///////////////////////////////////////////////////////////////////////////
@@ -490,34 +529,54 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 	//       ABox axioms                                                     //
 	//                                                                       //
 	///////////////////////////////////////////////////////////////////////////
-	
-	@Override
-	public void visit(OWLNegativeDataPropertyAssertionAxiom axiom) {
 
-	}
+	private static final String TP = "%s %s %s .\n";
 
 	@Override
-	public void visit(OWLDifferentIndividualsAxiom axiom) {
+	public void visit(OWLClassAssertionAxiom axiom) {
+		if(axiom.getClassExpression().isAnonymous()) {
+			String var = "?cls";
+			sparql += String.format(TP,render(axiom.getIndividual()), " a ", var);
+			expressionConverter = new OWLClassExpressionToSPARQLConverter();
+			String classPattern = expressionConverter.asGroupGraphPattern(axiom.getClassExpression(), var);
+			sparql += classPattern;
+		} else {
+			sparql += String.format(TP,render(axiom.getIndividual()), " a ", render(axiom.getClassExpression().asOWLClass()));
+		}
 	}
 
 	@Override
 	public void visit(OWLObjectPropertyAssertionAxiom axiom) {
+		sparql += String.format(TP,render(axiom.getSubject()), render(axiom.getProperty()), render(axiom.getObject()));
 	}
-	
+
 	@Override
-	public void visit(OWLClassAssertionAxiom axiom) {
+	public void visit(OWLNegativeObjectPropertyAssertionAxiom axiom) {
+		sparql += "{ SELECT (COUNT(*) AS ?cnt) {\n";
+		sparql += String.format(TP,render(axiom.getSubject()), render(axiom.getProperty()), render(axiom.getObject()));
+		sparql += "}}\n";
+		sparql += "FILTER(?cnt = 0)";
 	}
 
 	@Override
 	public void visit(OWLDataPropertyAssertionAxiom axiom) {
+		sparql += String.format(TP,render(axiom.getSubject()), render(axiom.getProperty()), render(axiom.getObject()));
 	}
-	
+
 	@Override
-	public void visit(OWLNegativeObjectPropertyAssertionAxiom axiom) {
+	public void visit(OWLNegativeDataPropertyAssertionAxiom axiom) {
+		sparql += "{ SELECT (COUNT(*) AS ?cnt) {\n";
+		sparql += String.format(TP,render(axiom.getSubject()), render(axiom.getProperty()), render(axiom.getObject()));
+		sparql += "}}\n";
+		sparql += "FILTER(?cnt = 0)";
 	}
-	
+
 	@Override
 	public void visit(OWLSameIndividualAxiom axiom) {
+	}
+
+	@Override
+	public void visit(OWLDifferentIndividualsAxiom axiom) {
 	}
 
 	@Override

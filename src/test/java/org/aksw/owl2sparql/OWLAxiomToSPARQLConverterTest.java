@@ -54,9 +54,13 @@ public class OWLAxiomToSPARQLConverterTest {
 	OWLObjectProperty propS = df.getOWLObjectProperty("s", pm);
 	OWLObjectProperty propT = df.getOWLObjectProperty("t", pm);
 
+	OWLDataProperty dp1 = df.getOWLDataProperty("dp1", pm);
+
 	OWLDataProperty dpT = df.getOWLDataProperty("dpT", pm);
 	OWLDataRange booleanRange = df.getBooleanOWLDatatype();
 	OWLLiteral lit = df.getOWLLiteral(1);
+	OWLDatatype cutomDt = df.getOWLDatatype("datatype/custom", pm);
+	OWLLiteral litCustomDT = df.getOWLLiteral("value", cutomDt);
 
 	OWLIndividual indA = df.getOWLNamedIndividual("a", pm);
 	OWLIndividual  indB = df.getOWLNamedIndividual("b", pm);
@@ -372,6 +376,99 @@ public class OWLAxiomToSPARQLConverterTest {
 				"	    ?s <http://foo.bar/t> ?o\n" +
 				"	  }");
 		Query query = converter.asQuery(axiom);
+
+		assertTrue("Conversion of axiom " + axiom + " failed.\n" + query + " does not match " + targetQuery, query.equals(targetQuery));
+	}
+
+	@Test
+	public void testObjectPropertyAssertionAxiom() {
+		OWLAxiom axiom = df.getOWLObjectPropertyAssertionAxiom(propR, indA, indB);
+
+		Query targetQuery = QueryFactory.create("ASK\n" +
+				"WHERE\n" +
+				"  { <http://foo.bar/a>\n" +
+				"              <http://foo.bar/r>  <http://foo.bar/b>\n" +
+				"  }");
+		Query query = converter.asQuery(axiom);
+
+		assertTrue("Conversion of axiom " + axiom + " failed.\n" + query + " does not match " + targetQuery, query.equals(targetQuery));
+	}
+
+	@Test
+	public void testDataPropertyAssertionAxiom() {
+		OWLAxiom axiom = df.getOWLDataPropertyAssertionAxiom(dp1, indA, litCustomDT);
+
+		Query targetQuery = QueryFactory.create("ASK\n" +
+				"WHERE\n" +
+				"  { <http://foo.bar/a>\n" +
+				"              <http://foo.bar/dp1>  \"value\"^^<http://foo.bar/datatype/custom>\n" +
+				"  }");
+		Query query = converter.asQuery(axiom);
+
+		assertTrue("Conversion of axiom " + axiom + " failed.\n" + query + " does not match " + targetQuery, query.equals(targetQuery));
+	}
+
+	@Test
+	public void testNegativeObjectPropertyAssertionAxiom() {
+		OWLAxiom axiom = df.getOWLNegativeObjectPropertyAssertionAxiom(propR, indA, indB);
+
+		Query targetQuery = QueryFactory.create("ASK\n" +
+				"WHERE\n" +
+				"  { { SELECT  (count(*) AS ?cnt)\n" +
+				"      WHERE\n" +
+				"        { <http://foo.bar/a>\n" +
+				"                    <http://foo.bar/r>  <http://foo.bar/b>\n" +
+				"        }\n" +
+				"    }\n" +
+				"    FILTER ( ?cnt = 0 )\n" +
+				"  }");
+		Query query = converter.asQuery(axiom);
+
+		assertTrue("Conversion of axiom " + axiom + " failed.\n" + query + " does not match " + targetQuery, query.equals(targetQuery));
+	}
+
+	@Test
+	public void testNegativeDataPropertyAssertionAxiom() {
+		OWLAxiom axiom = df.getOWLNegativeDataPropertyAssertionAxiom(dp1, indA, litCustomDT);
+
+		Query targetQuery = QueryFactory.create("ASK\n" +
+				"WHERE\n" +
+				"  { { SELECT  (count(*) AS ?cnt)\n" +
+				"      WHERE\n" +
+				"        { <http://foo.bar/a>\n" +
+				"                    <http://foo.bar/dp1>  \"value\"^^<http://foo.bar/datatype/custom>\n" +
+				"        }\n" +
+				"    }\n" +
+				"    FILTER ( ?cnt = 0 )\n" +
+				"  }");
+		Query query = converter.asQuery(axiom);
+
+		assertTrue("Conversion of axiom " + axiom + " failed.\n" + query + " does not match " + targetQuery, query.equals(targetQuery));
+	}
+
+	@Test
+	public void testClassAssertionAxiom() {
+		OWLAxiom axiom = df.getOWLClassAssertionAxiom(clsA, indA);
+
+		Query targetQuery = QueryFactory.create("ASK\n" +
+				"WHERE\n" +
+				"  { <http://foo.bar/a>\n" +
+				"              a                     <http://foo.bar/A>\n" +
+				"  }");
+		Query query = converter.asQuery(axiom);
+
+		assertTrue("Conversion of axiom " + axiom + " failed.\n" + query + " does not match " + targetQuery, query.equals(targetQuery));
+
+		axiom = df.getOWLClassAssertionAxiom(df.getOWLObjectSomeValuesFrom(propR, clsA), indA);
+
+		targetQuery = QueryFactory.create("ASK\n" +
+				"WHERE\n" +
+				"  { <http://foo.bar/a>\n" +
+				"              a                     ?cls .\n" +
+				"    ?cls      <http://foo.bar/r>    ?s0 .\n" +
+				"    ?s0       a                     <http://foo.bar/A>\n" +
+				"  }");
+		query = converter.asQuery(axiom);
 
 		assertTrue("Conversion of axiom " + axiom + " failed.\n" + query + " does not match " + targetQuery, query.equals(targetQuery));
 	}

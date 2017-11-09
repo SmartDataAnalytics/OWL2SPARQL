@@ -20,10 +20,10 @@
 package org.aksw.owl2sparql;
 
 
-import com.hp.hpl.jena.query.ParameterizedSparqlString;
-import com.hp.hpl.jena.query.Query;
-import com.hp.hpl.jena.query.QueryFactory;
-import com.hp.hpl.jena.query.Syntax;
+import org.apache.jena.query.ParameterizedSparqlString;
+import org.apache.jena.query.Query;
+import org.apache.jena.query.QueryFactory;
+import org.apache.jena.query.Syntax;
 import org.aksw.owl2sparql.util.VarGenerator;
 import org.semanticweb.owlapi.model.*;
 
@@ -493,6 +493,7 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 	
 	@Override
 	public void visit(OWLNegativeDataPropertyAssertionAxiom axiom) {
+
 	}
 
 	@Override

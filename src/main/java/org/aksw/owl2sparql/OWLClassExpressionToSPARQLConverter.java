@@ -965,7 +965,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	}
 	
 	public static void main(String[] args) throws Exception {
-		ToStringRenderer.getInstance().setRenderer(new DLSyntaxObjectRenderer());
+		ToStringRenderer.setRenderer(()->new DLSyntaxObjectRenderer());
 		OWLClassExpressionToSPARQLConverter converter = new OWLClassExpressionToSPARQLConverter();
 		
 		OWLOntologyManager man = OWLManager.createOWLOntologyManager();

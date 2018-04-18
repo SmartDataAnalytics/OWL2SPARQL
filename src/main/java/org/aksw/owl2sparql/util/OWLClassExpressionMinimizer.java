@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLClassExpressionVisitorEx;
@@ -60,7 +61,7 @@ public class OWLClassExpressionMinimizer implements OWLClassExpressionVisitorEx<
 	public OWLClassExpressionMinimizer(OWLDataFactory dataFactory) {
 		this.df = dataFactory;
 		
-		objectDuplicator = new OWLObjectDuplicator(dataFactory);
+		objectDuplicator = new OWLObjectDuplicator(OWLManager.createOWLOntologyManager());
 	}
 	
 	public OWLClassExpression minimize(OWLClassExpression ce){
@@ -119,8 +120,8 @@ public class OWLClassExpressionMinimizer implements OWLClassExpressionVisitorEx<
 	}
 
 	/**
-	 * @param op1
-	 * @param op2
+	 * @param subClass
+	 * @param superClass
 	 * @return
 	 */
 	private boolean isSubClassOf(OWLClassExpression subClass, OWLClassExpression superClass) {

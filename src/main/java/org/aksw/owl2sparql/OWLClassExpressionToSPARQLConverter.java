@@ -428,7 +428,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 	}
 	
 	private String render(OWLLiteral literal){
-		return "\"" + literal + "\"^^<" + literal.getDatatype().toStringID() + ">";
+		return "\"" + literal.getLiteral() + "\"^^<" + literal.getDatatype().toStringID() + ">";
 	}
 
 	@Override

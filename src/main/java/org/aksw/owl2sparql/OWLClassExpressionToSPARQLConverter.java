@@ -215,7 +215,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 			}
 		}
 		queryString += appendix;
-		System.out.println(queryString);
+		logger.debug(queryString);
 		return QueryFactory.create(queryString, Syntax.syntaxSPARQL_11);
 	}
 	
@@ -991,35 +991,35 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 		
 		OWLClassExpression expr = clsA;
 		String query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectSomeValuesFrom(propR, clsB);
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectIntersectionOf(
 				df.getOWLObjectSomeValuesFrom(propR, clsB),
 				clsB);
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectUnionOf(
 				clsA,
 				clsB);
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectHasValue(propR, indA);
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectAllValuesFrom(propR, df.getOWLThing());
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectAllValuesFrom(propR, df.getOWLObjectAllValuesFrom(propS, df.getOWLThing()));
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectAllValuesFrom(
 				propR, 
@@ -1027,7 +1027,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 						clsA,
 						df.getOWLObjectAllValuesFrom(propS, df.getOWLThing())));
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectAllValuesFrom(
 				propR, 
@@ -1035,19 +1035,19 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 						clsA,
 						df.getOWLObjectAllValuesFrom(propS, df.getOWLThing())));
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectAllValuesFrom(propR, clsB);
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectAllValuesFrom(df.getOWLObjectProperty("language", pm), df.getOWLClass("Language", pm));
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectMinCardinality(2, df.getOWLObjectProperty("language", pm), df.getOWLClass("Language", pm));
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectIntersectionOf(
 				df.getOWLClass("Place", pm),
@@ -1056,71 +1056,71 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 						df.getOWLObjectProperty("language", pm), 
 						df.getOWLClass("Language", pm)));
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectOneOf(indA, indB);
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectSomeValuesFrom(propR, df.getOWLObjectOneOf(indA, indB));
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectIntersectionOf(
 				clsA, 
 				df.getOWLObjectHasSelf(propR));
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectIntersectionOf(
 				clsA, 
 				df.getOWLDataSomeValuesFrom(dpT, booleanRange));
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectIntersectionOf(
 				clsA, 
 				df.getOWLDataHasValue(dpT, lit));
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectIntersectionOf(
 				clsA, 
 				df.getOWLDataMinCardinality(2, dpT, booleanRange));
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectComplementOf(clsB);
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectIntersectionOf(
 				clsA, 
 				df.getOWLObjectComplementOf(clsB));
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectSomeValuesFrom(propR, 
 				df.getOWLObjectIntersectionOf(
 						clsA, 
 						df.getOWLObjectComplementOf(clsB)));
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLDataAllValuesFrom(dpT, booleanRange);
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLDataAllValuesFrom(dpT,df.getOWLDataOneOf(lit));
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		//variable entity
 		expr = df.getOWLObjectIntersectionOf(
 				df.getOWLObjectSomeValuesFrom(propR, clsB),
 				clsB, df.getOWLObjectSomeValuesFrom(propS, clsA));
 		query = converter.asQuery(rootVar, expr, Sets.newHashSet(propR, propS)).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectIntersectionOf(
 				df.getOWLObjectSomeValuesFrom(
@@ -1130,7 +1130,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 								clsC)),
 				clsB);
 		query = converter.asQuery(rootVar, expr, Sets.newHashSet(propR, propS)).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		
 		expr = df.getOWLObjectIntersectionOf(
@@ -1144,14 +1144,14 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 					)
 				);
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectUnionOf(
 				df.getOWLObjectComplementOf(clsA),
 				df.getOWLObjectComplementOf(clsB)
 			);
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectIntersectionOf(
 				clsA,
@@ -1166,10 +1166,10 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 				)
 			);
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		Op op = Algebra.compile(converter.asQuery(expr, rootVar));
-		System.out.println(op);
+		logger.debug(op.toString());
 		
 		expr = df.getOWLObjectIntersectionOf(
 				clsA,
@@ -1181,19 +1181,19 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 				)
 			);
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		expr = df.getOWLObjectIntersectionOf(
 				clsA,
 				df.getOWLDataSomeValuesFrom(dpT, df.getOWLDataComplementOf(booleanRange))
 			);
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		// data one of
 		expr = df.getOWLDataSomeValuesFrom(dpT,df.getOWLDataOneOf(df.getOWLLiteral(1), df.getOWLLiteral(2)));
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		// data not one of
 		expr = df.getOWLDataSomeValuesFrom(
@@ -1201,7 +1201,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 				df.getOWLDataComplementOf(
 						df.getOWLDataOneOf(df.getOWLLiteral(1), df.getOWLLiteral(2))));
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		// data intersection
 		expr = df.getOWLDataSomeValuesFrom(
@@ -1210,7 +1210,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 						df.getBooleanOWLDatatype(), 
 						df.getOWLDataOneOf(df.getOWLLiteral(1), df.getOWLLiteral(2))));
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		// data union
 		expr = df.getOWLDataSomeValuesFrom(
@@ -1221,7 +1221,7 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 								df.getBooleanOWLDatatype(),
 								df.getOWLDataOneOf(df.getOWLLiteral(1), df.getOWLLiteral(2)))));
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		// data restriction
 		expr = df.getOWLDataSomeValuesFrom(
@@ -1233,16 +1233,16 @@ public class OWLClassExpressionToSPARQLConverter implements OWLClassExpressionVi
 						df.getOWLFacetRestriction(
 								OWLFacet.MIN_INCLUSIVE, df.getOWLLiteral(3))));
 		query = converter.asQuery(expr, rootVar).toString();
-		System.out.println(expr + "\n" + query);
+		logger.debug(expr + "\n" + query);
 		
 		// data restriction
-				expr = df.getOWLDataSomeValuesFrom(
-						dpT, 
-						df.getOWLDatatypeRestriction(
-								df.getRDFPlainLiteral(),
-								df.getOWLFacetRestriction(
-										OWLFacet.LENGTH, df.getOWLLiteral(10))));
-				query = converter.asQuery(expr, rootVar).toString();
-				System.out.println(expr + "\n" + query);
+		expr = df.getOWLDataSomeValuesFrom(
+				dpT,
+				df.getOWLDatatypeRestriction(
+						df.getRDFPlainLiteral(),
+						df.getOWLFacetRestriction(
+								OWLFacet.LENGTH, df.getOWLLiteral(10))));
+		query = converter.asQuery(expr, rootVar).toString();
+		logger.debug(expr + "\n" + query);
 	}
 }

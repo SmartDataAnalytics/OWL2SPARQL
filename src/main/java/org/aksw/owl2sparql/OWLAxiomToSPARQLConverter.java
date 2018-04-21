@@ -30,6 +30,7 @@ import org.semanticweb.owlapi.model.*;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * A converter from <a href="http://www.w3.org/TR/owl2-syntax/#Axioms">OWL 2
@@ -237,7 +238,7 @@ public class OWLAxiomToSPARQLConverter implements OWLAxiomVisitor{
 	
 	@Override
 	public void visit(OWLDisjointClassesAxiom axiom) {
-		List<OWLClassExpression> disjointClasses = axiom.getClassExpressionsAsList();
+		List<OWLClassExpression> disjointClasses = axiom.classExpressions().collect(Collectors.toList());
 		
 		for(int i = 0; i < disjointClasses.size(); i++){
 			sparql += "{";

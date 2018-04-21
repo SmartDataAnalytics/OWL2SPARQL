@@ -22,7 +22,9 @@ package org.aksw.owl2sparql.util;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLClassExpressionVisitorEx;
@@ -60,7 +62,7 @@ public class OWLClassExpressionMinimizer implements OWLClassExpressionVisitorEx<
 	public OWLClassExpressionMinimizer(OWLDataFactory dataFactory) {
 		this.df = dataFactory;
 		
-		objectDuplicator = new OWLObjectDuplicator(dataFactory);
+		objectDuplicator = new OWLObjectDuplicator(OWLManager.createOWLOntologyManager());
 	}
 	
 	public OWLClassExpression minimize(OWLClassExpression ce){
@@ -85,7 +87,7 @@ public class OWLClassExpressionMinimizer implements OWLClassExpressionVisitorEx<
 	 */
 	@Override
 	public OWLClassExpression visit(OWLObjectIntersectionOf ce) {
-		List<OWLClassExpression> operands = ce.getOperandsAsList();
+		List<OWLClassExpression> operands = ce.operands().collect(Collectors.toList());
 		//replace operands by the short form
 		for (int i = 0; i < operands.size(); i++) {
 			operands.set(i, operands.get(i).accept(this));
@@ -119,8 +121,8 @@ public class OWLClassExpressionMinimizer implements OWLClassExpressionVisitorEx<
 	}
 
 	/**
-	 * @param op1
-	 * @param op2
+	 * @param subClass
+	 * @param superClass
 	 * @return
 	 */
 	private boolean isSubClassOf(OWLClassExpression subClass, OWLClassExpression superClass) {
@@ -132,7 +134,7 @@ public class OWLClassExpressionMinimizer implements OWLClassExpressionVisitorEx<
 	 */
 	@Override
 	public OWLClassExpression visit(OWLObjectUnionOf ce) {
-		List<OWLClassExpression> operands = ce.getOperandsAsList();
+		List<OWLClassExpression> operands = ce.operands().collect(Collectors.toList());
 		//replace operands by the short form
 		for (int i = 0; i < operands.size(); i++) {
 			operands.set(i, operands.get(i).accept(this));

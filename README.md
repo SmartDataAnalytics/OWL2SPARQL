@@ -35,6 +35,9 @@ This project provides a simple converter from OWL axioms and OWL class expressio
 </dependencies>
 ```
 
+## Javadoc
+Latest Javadoc is available online [here](https://smartdataanalytics.github.io/OWL2SPARQL/)
+
 ## From OWL axiom to SPARQL query
 
 ### Usage
